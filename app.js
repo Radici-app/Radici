@@ -93,6 +93,8 @@ function adattaTesti() {
     const largo = () => { const r = b.getBoundingClientRect(), q = b.parentNode.getBoundingClientRect(), pad = parseFloat(getComputedStyle(b.parentNode).paddingRight) || 0; return b.scrollWidth > b.clientWidth + 1 || r.right > q.right - pad + 1; };
     while (largo() && f > 9 && giri++ < 30) { f -= 0.5; b.style.fontSize = f + 'px'; }
   });
+  /* stessa grandezza per tutte le scritte dello stesso tipo di riquadro, la più piccola che serve */
+  ['big', 'sm'].forEach(t => { const l = [...document.querySelectorAll('#ph .mt.' + t + ' b')], m = Math.min(...l.map(b => parseFloat(getComputedStyle(b).fontSize))); l.forEach(b => { b.style.fontSize = m + 'px'; }); });
 }
 addEventListener('resize', () => { if (PAG === 'ph') adattaTesti(); });
 function renderHome() {
