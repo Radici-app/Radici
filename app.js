@@ -86,6 +86,15 @@ function renderTesta() {
   $('cBtn').textContent = utente ? 'Esci' : 'Accedi';
   document.title = C.nome + ' – Prenota';
 }
+/* Adatta le scritte dei riquadri: se una parola non entra, rimpicciolisce il testo finché ci sta */
+function adattaTesti() {
+  document.querySelectorAll('#ph .mt b').forEach(b => {
+    b.style.fontSize = ''; let f = parseFloat(getComputedStyle(b).fontSize), giri = 0;
+    const largo = () => { const r = b.getBoundingClientRect(), q = b.parentNode.getBoundingClientRect(), pad = parseFloat(getComputedStyle(b.parentNode).paddingRight) || 0; return b.scrollWidth > b.clientWidth + 1 || r.right > q.right - pad + 1; };
+    while (largo() && f > 9 && giri++ < 30) { f -= 0.5; b.style.fontSize = f + 'px'; }
+  });
+}
+addEventListener('resize', () => { if (PAG === 'ph') adattaTesti(); });
 function renderHome() {
   renderTesta();
   $('cover').querySelector('img')?.remove();
@@ -94,6 +103,7 @@ function renderHome() {
   $('hSub').textContent = C.sottotitolo || 'Prenota in pochi tocchi';
   const fut = MIE.filter(attiva).length; $('nMie').textContent = fut || '';
   const ch = C.chiusure.find(c => c.a >= oggi()); $('nChiuso').textContent = ch ? '!' : '';
+  requestAnimationFrame(adattaTesti); if (document.fonts) document.fonts.ready.then(adattaTesti);
 }
 function renderInfo() {
   $('iNome').textContent = C.nome;

@@ -53,7 +53,11 @@ body:has(#ph:not([hidden])) .wrap{padding-bottom:calc(16px + var(--sab))}
 #ph .cover{height:auto;flex:1 1 190px;min-height:190px;max-height:420px}
 #ph .menu{flex:1.3 1 auto;grid-auto-rows:minmax(0,1fr);grid-template-rows:1.25fr 1fr}
 #ph .mt.big,#ph .mt.sm{min-height:0;height:100%}
-@media(min-height:740px){#ph .mt.big svg{width:64px;height:64px}#ph .mt.big b{font-size:1.5rem}#ph .mt.sm svg{width:40px;height:40px}}
+@media(min-height:740px){#ph .mt.big svg{width:64px;height:64px}#ph .mt.sm svg{width:40px;height:40px}}
+/* Testi dei riquadri: si adattano alla larghezza, anche con il carattere del telefono ingrandito */
+#ph .menu{container-type:inline-size}
+#ph .mt.big b{font-size:clamp(1rem,6.4cqi,1.5rem);-webkit-hyphens:manual;hyphens:manual;max-width:100%}
+#ph .mt.sm b{font-size:clamp(.72rem,3.4cqi,.9rem);max-width:100%}
 .cover img{width:100%;height:100%;object-fit:cover;display:block}
 .cover .ct{position:absolute;left:18px;bottom:16px;right:18px;color:#fff}
 .cover .ct h1{color:#fff;font-size:2.2rem;line-height:1.05}
@@ -71,7 +75,7 @@ h2{font-size:1.9rem;line-height:1.1;margin-bottom:12px}
 .mt{position:relative;min-width:0;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:10px;border:0;background:var(--c);color:var(--head);text-align:left;cursor:pointer;border-radius:26px;padding:14px;transition:transform .12s}
 .mt:active{transform:scale(.97)}
 .mt svg{width:34px;height:34px;flex:none}
-.mt b{font-weight:700;font-size:.82rem;line-height:1.15;-webkit-hyphens:manual;hyphens:manual}
+.mt b{font-weight:700;font-size:.82rem;line-height:1.15;-webkit-hyphens:manual;hyphens:manual;white-space:normal;word-break:normal}
 .mt.big{grid-column:span 2;min-height:150px;padding:18px;border-radius:32px}
 .mt.big svg{width:54px;height:54px}
 .mt.big b{font:400 1.35rem/1.1 "Fraunces",serif}
