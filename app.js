@@ -1,6 +1,6 @@
 /* Radici – app clienti */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, signOut, deleteUser } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithPopup, signInWithCredential, GoogleAuthProvider, signOut, deleteUser } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot, query, where, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const VERSIONE = '1.0';
@@ -296,7 +296,9 @@ function apriLogin() { $('lErr').textContent = ''; $('login').hidden = false; }
 $('lX').onclick = () => { $('login').hidden = true; };
 $('cBtn').onclick = () => utente ? signOut(auth) : apriLogin();
 const errAuth = e => ({ 'auth/invalid-credential': 'Email o password non corretti.', 'auth/wrong-password': 'Email o password non corretti.', 'auth/user-not-found': 'Email o password non corretti.', 'auth/invalid-email': 'Controlla l’indirizzo email.', 'auth/email-already-in-use': 'Esiste già un account con questa email: accedi.', 'auth/weak-password': 'La password deve avere almeno 6 caratteri.', 'auth/too-many-requests': 'Troppi tentativi: riprova tra qualche minuto.', 'auth/network-request-failed': 'Controlla la connessione e riprova.' })[e && e.code] || 'Operazione non riuscita. Riprova.';
-$('lGoogle').onclick = async () => { try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { if (!/popup-closed|cancelled-popup/.test(e.code)) $('lErr').textContent = errAuth(e); } };
+/* Google: nell'app Android con la scelta dell'account del telefono, sul sito con la finestra di Google */
+const FA = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins ? window.Capacitor.Plugins.FirebaseAuthentication : null;
+$('lGoogle').onclick = async () => { try { if (FA) { const r = await FA.signInWithGoogle(); await signInWithCredential(auth, GoogleAuthProvider.credential(r.credential && r.credential.idToken)); } else await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { if (/popup-closed|cancelled-popup/.test(e.code) || /cancel/i.test(String(e && e.message))) return; $('lErr').textContent = FA ? 'Accesso con Google non riuscito (' + (e.code || e.message || 'errore') + ').' : errAuth(e); } };
 $('lIn').onclick = async () => { const m = $('lMail').value.trim(), p = $('lPass').value; if (!m || !p) { $('lErr').textContent = 'Inserisci email e password.'; return; } try { await signInWithEmailAndPassword(auth, m, p); } catch (e) { $('lErr').textContent = errAuth(e); } };
 $('lReg').onclick = async () => { const m = $('lMail').value.trim(), p = $('lPass').value; if (!/^\S+@\S+\.\S+$/.test(m)) { $('lErr').textContent = 'Inserisci un’email valida.'; return; } if (p.length < 6) { $('lErr').textContent = 'Scegli una password di almeno 6 caratteri.'; return; } try { const c = await createUserWithEmailAndPassword(auth, m, p); sendEmailVerification(c.user).catch(() => {}); } catch (e) { $('lErr').textContent = errAuth(e); } };
 $('lRes').onclick = async () => { const m = $('lMail').value.trim(); if (!/^\S+@\S+\.\S+$/.test(m)) { $('lErr').textContent = 'Scrivi la tua email, poi tocca “Password dimenticata?”.'; return; } try { await sendPasswordResetEmail(auth, m); } catch (e) {} $('lErr').textContent = 'Se l’email è registrata, ti abbiamo inviato un link per scegliere una nuova password.'; };
@@ -319,7 +321,7 @@ onAuthStateChanged(auth, async u => {
 const APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 if (APP) {
   document.documentElement.classList.add('in-app');
-  $('lGoogle').hidden = true; $('lOpp').hidden = true; // l'accesso con Google dentro l'app richiede la configurazione del nuovo progetto Firebase
+  if (!FA) { $('lGoogle').hidden = true; $('lOpp').hidden = true; } // l'accesso con Google dentro l'app richiede la configurazione del nuovo progetto Firebase
   const N = window.Capacitor.Plugins || {};
   if (N.App) N.App.addListener('backButton', () => {
     for (const id of ['dlg', 'prof', 'login']) if (!$(id).hidden) { if (id === 'dlg') ($('dlgNo').hidden ? $('dlgOk') : $('dlgNo')).click(); else $(id).hidden = true; return; }

@@ -3,11 +3,17 @@
   "private": true,
   "version": "1.0.0",
   "description": "App Android di Radici: lo stesso sito della cartella principale, racchiuso in un'app",
-  "scripts": { "sync": "node copia-web.js && npx cap sync android" },
+  "scripts": {
+    "sync": "node copia-web.js && npx cap sync android"
+  },
   "dependencies": {
+    "@capacitor-firebase/authentication": "8.6.0",
     "@capacitor/android": "8.6.0",
     "@capacitor/app": "8.1.0",
-    "@capacitor/core": "8.6.0"
+    "@capacitor/core": "8.6.0",
+    "firebase": "^12.19.0"
   },
-  "devDependencies": { "@capacitor/cli": "8.6.0" }
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0"
+  }
 }

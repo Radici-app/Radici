@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "602201707324",
+    "project_id": "radici-app",
+    "storage_bucket": "radici-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:602201707324:android:d926335aac8aab8981c439",
+        "android_client_info": {
+          "package_name": "it.radiciapp.prenota"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "602201707324-n20cmjb0vcre88591dvo86gratqub4bg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "it.radiciapp.prenota",
+            "certificate_hash": "dfe53f96d23c9f8e9da1ad8757eba354420267b7"
+          }
+        },
+        {
+          "client_id": "602201707324-va1majrua8jjgctv35bp56irukr2ckuh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPakTKMANUpOdCjp_yNRb95AXW25jNnOE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "602201707324-va1majrua8jjgctv35bp56irukr2ckuh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
