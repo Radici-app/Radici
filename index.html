@@ -46,7 +46,14 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offse
 .brand b{display:block;font:600 1.45rem/1 "Fraunces",serif;color:var(--head)}
 .brand span{display:block;margin-top:4px;font-size:.72rem;color:var(--gold);font-weight:600;letter-spacing:.12em;text-transform:uppercase}
 .pill{background:none;border:1.5px solid var(--head);color:var(--head);border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer;white-space:nowrap}
-.cover{position:relative;margin:14px 0 0;height:190px;border-radius:30px;overflow:hidden;background:linear-gradient(135deg,var(--acc),var(--pri))}
+.cover{position:relative;margin:14px 0 0;height:190px;border-radius:30px;overflow:hidden;background:linear-gradient(135deg,#8E9A55,#4F5A2A)}
+/* Home a tutta altezza: copertina e riquadri si allungano fino a riempire lo schermo */
+body:has(#ph:not([hidden])) .wrap{padding-bottom:calc(16px + var(--sab))}
+#ph:not([hidden]){display:flex;flex-direction:column;min-height:calc(100svh - 92px - var(--sat) - var(--sab))}
+#ph .cover{height:auto;flex:1 1 190px;min-height:190px;max-height:420px}
+#ph .menu{flex:1.3 1 auto;grid-auto-rows:minmax(0,1fr);grid-template-rows:1.25fr 1fr}
+#ph .mt.big,#ph .mt.sm{min-height:0;height:100%}
+@media(min-height:740px){#ph .mt.big svg{width:64px;height:64px}#ph .mt.big b{font-size:1.5rem}#ph .mt.sm svg{width:40px;height:40px}}
 .cover img{width:100%;height:100%;object-fit:cover;display:block}
 .cover .ct{position:absolute;left:18px;bottom:16px;right:18px;color:#fff}
 .cover .ct h1{color:#fff;font-size:2.2rem;line-height:1.05}
