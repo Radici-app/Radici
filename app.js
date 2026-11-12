@@ -258,9 +258,20 @@ $('mSto').onclick = () => { storico = true; renderMie(); };
 /* ---------- profilo ---------- */
 function renderProfilo() {
   const n = PROF && (PROF.nome || PROF.cogn) ? (PROF.nome + ' ' + PROF.cogn).trim() : (utente && utente.displayName) || 'Ospite';
-  $('pAv').textContent = iniziali(n); $('pNome').textContent = n; $('pMail').textContent = utente ? utente.email || '' : ''; $('pVer').textContent = VERSIONE;
+  const foto = (PROF && PROF.foto) || (utente && utente.photoURL) || '';
+  $('pAv').innerHTML = foto ? `<img src="${esc(foto)}" alt="" referrerpolicy="no-referrer">` : esc(iniziali(n)); $('pNome').textContent = n; $('pMail').textContent = utente ? utente.email || '' : ''; $('pVer').textContent = VERSIONE;
   if (C.privacy) $('tPriv').textContent = C.privacy; if (C.termini) $('tTerm').textContent = C.termini;
 }
+/* foto del profilo: rimpicciolita sul telefono e salvata con i dati del cliente */
+function riduci(file, lato) { return new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { const s = Math.min(1, lato / Math.min(im.width, im.height)), c = document.createElement('canvas'), w = Math.round(im.width * s), h = Math.round(im.height * s), q = Math.min(w, h); c.width = c.height = q; c.getContext('2d').drawImage(im, (q - w) / 2, (q - h) / 2, w, h); ok(c.toDataURL('image/jpeg', .82)); }; im.onerror = ko; im.src = r.result; }; r.onerror = ko; r.readAsDataURL(file); }); }
+$('pFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f || !utente) return;
+  if (PROF && PROF.foto && !await dialogo('Foto del profilo', 'Vuoi sostituire la foto attuale?', 'Sostituisci', 'Togli la foto')) {
+    try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), { foto: '' }, { merge: true }); PROF.foto = ''; renderProfilo(); toast('Foto tolta'); } catch (x) { avvisa('Non riuscito. Riprova.'); } return;
+  }
+  try { const foto = await riduci(f, 256); await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), { foto }, { merge: true }); PROF = Object.assign(PROF || {}, { foto }); renderProfilo(); toast('Foto aggiornata'); }
+  catch (x) { avvisa('Non riesco a caricare la foto. Prova con un’altra immagine.'); }
+};
 $('pMod').onclick = () => { const p = PROF || {}; $('eNome').value = p.nome || ''; $('eCogn').value = p.cogn || ''; $('eTel').value = p.tel || ''; $('eErr').textContent = ''; $('prof').hidden = false; };
 $('eNo').onclick = () => { $('prof').hidden = true; };
 $('eOk').onclick = async () => {

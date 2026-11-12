@@ -178,7 +178,10 @@ input:focus{outline:none;border-color:var(--acc)}
 .vuoto{text-align:center;color:var(--mute);padding:30px 10px}
 .ok{width:72px;height:72px;border-radius:50%;background:var(--ok);color:#fff;display:grid;place-items:center;font-size:34px;margin:10px 0 16px}
 .prof{text-align:center;padding-top:10px}
-.prof .av{width:96px;height:96px;margin:0 auto 10px;font-size:2rem}
+.prof .av{width:104px;height:104px;margin:0 auto;font-size:2.1rem;border:3px solid var(--surf);box-shadow:var(--sh)}
+.pfoto{position:relative;width:104px;margin:0 auto 12px;cursor:pointer;display:block}
+.pfoto .cam{position:absolute;right:-2px;bottom:-2px;width:36px;height:36px;border-radius:50%;background:var(--pri);color:var(--onpri);display:grid;place-items:center;border:3px solid var(--bg)}
+.pfoto .cam svg{width:18px;height:18px}
 .pmenu{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:18px}
 .pmenu button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 6px;border:1.5px solid var(--line);border-radius:20px;background:var(--surf);cursor:pointer;color:var(--head);font-weight:600;font-size:.85rem}
 .pmenu svg{width:30px;height:30px;color:var(--acc)}
@@ -276,7 +279,7 @@ input:focus{outline:none;border-color:var(--acc)}
    <div id="mList"></div></section></div>
 
   <div id="pp" class="p" hidden><button class="ind" data-back>‹ Indietro</button><section class="prof">
-   <div class="av" id="pAv">?</div><h2 id="pNome" style="margin:0">Ospite</h2><p class="hint" id="pMail"></p>
+   <label class="pfoto" aria-label="Cambia la foto del profilo"><div class="av" id="pAv">?</div><span class="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><input type="file" accept="image/*" id="pFile" hidden></label><h2 id="pNome" style="margin:0">Ospite</h2><p class="hint" id="pMail"></p>
    <div class="pmenu">
     <button id="pMod"><svg data-i="utente"></svg>Modifica profilo</button>
     <button data-go="pv"><svg data-i="scudo"></svg>Privacy</button>
