@@ -319,7 +319,7 @@ onAuthStateChanged(auth, async u => {
 const APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 if (APP) {
   document.documentElement.classList.add('in-app');
-  $('lGoogle').hidden = true; // l'accesso con Google dentro l'app richiede la configurazione del nuovo progetto Firebase
+  $('lGoogle').hidden = true; $('lOpp').hidden = true; // l'accesso con Google dentro l'app richiede la configurazione del nuovo progetto Firebase
   const N = window.Capacitor.Plugins || {};
   if (N.App) N.App.addListener('backButton', () => {
     for (const id of ['dlg', 'prof', 'login']) if (!$(id).hidden) { if (id === 'dlg') ($('dlgNo').hidden ? $('dlgOk') : $('dlgNo')).click(); else $(id).hidden = true; return; }
