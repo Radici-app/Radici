@@ -32,7 +32,9 @@ const avatar = st => `<span class="av">${st && st.foto ? `<img src="${esc(st.fot
 let C = cp(window.RADICI_SEED);
 let BUSY = [], busyOk = false, utente = null, PROF = null, MIE = [], mieOk = false, storico = false;
 let sel = [], staffSel = 'any', giorno = null, ora = null, mese = null;
-onSnapshot(doc(db, 'saloni', SALONE), s => { if (s.exists()) { C = Object.assign(cp(window.RADICI_SEED), s.data()); sel = sel.filter(id => serv(id)); ridisegna(); } }, () => {});
+let prCfg = false, prAuth = false;
+const prova = () => { if (prCfg && prAuth && window.splashPronto) window.splashPronto(); };
+onSnapshot(doc(db, 'saloni', SALONE), s => { if (s.exists()) { C = Object.assign(cp(window.RADICI_SEED), s.data()); window.splashDati && window.splashDati(C); sel = sel.filter(id => serv(id)); ridisegna(); } prCfg = true; prova(); }, () => { prCfg = true; prova(); });
 onSnapshot(colB, s => { BUSY = s.docs.map(d => d.data()); busyOk = true; if (PAG === 'p3') renderSlots(); }, () => { busyOk = true; });
 
 const serv = id => C.servizi.find(s => s.id === id);
@@ -287,6 +289,7 @@ onAuthStateChanged(auth, async u => {
     unsubMie = onSnapshot(query(colP, where('uid', '==', u.uid)), s => { MIE = s.docs.map(d => d.data()); mieOk = true; if (PAG === 'pm' || PAG === 'ph') mostraP(PAG); }, () => { mieOk = true; });
   } else if (['pm', 'pp'].includes(PAG)) { STORIA = ['ph']; }
   renderTesta(); mostraP(PAG === 'pm' || PAG === 'pp' ? (u ? PAG : 'ph') : PAG);
+  prAuth = true; prova();
 });
 
 window.riempiIcone(); try { history.replaceState({ r: 1 }, ''); } catch (e) {}

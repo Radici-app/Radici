@@ -179,9 +179,39 @@ input:focus{outline:none;border-color:var(--acc)}
 .pmenu button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 6px;border:1.5px solid var(--line);border-radius:20px;background:var(--surf);cursor:pointer;color:var(--head);font-weight:600;font-size:.85rem}
 .pmenu svg{width:30px;height:30px;color:var(--acc)}
 .ver{text-align:right;color:var(--mute);font-size:.8rem;margin-top:30px}
+/* Splash screen: radici che crescono, poi il nome */
+#splash{position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(70% 50% at 50% 40%,#9AA65F 0,#6E7A3C 55%,#3F4A20 100%);color:#fff;transition:opacity .5s ease,visibility .5s}
+#splash.via{opacity:0;visibility:hidden;pointer-events:none}
+#splash .seme{width:116px;height:116px;border-radius:50%;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.55);display:grid;place-items:center;font:600 3.4rem/1 "Fraunces",Georgia,serif;overflow:hidden;transform:scale(.6);opacity:0;animation:spPop .7s .1s cubic-bezier(.2,1.4,.4,1) forwards}
+#splash .seme img{width:100%;height:100%;object-fit:cover}
+#splash svg{width:180px;height:70px;margin-top:-6px;overflow:visible}
+#splash svg path{fill:none;stroke:rgba(255,255,255,.7);stroke-width:2;stroke-linecap:round;stroke-dasharray:120;stroke-dashoffset:120;animation:spRad 1.1s .5s ease forwards}
+#splash svg path:nth-child(2){animation-delay:.62s}#splash svg path:nth-child(3){animation-delay:.74s}#splash svg path:nth-child(4){animation-delay:.86s}#splash svg path:nth-child(5){animation-delay:.98s}
+#splash .nm{font:400 clamp(2.6rem,12vw,3.6rem)/1 "Fraunces",Georgia,serif;letter-spacing:-.02em;opacity:0;animation:spSu .7s 1s ease forwards}
+#splash .sb{font-size:.8rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#E9DDB8;opacity:0;animation:spSu .7s 1.2s ease forwards}
+@keyframes spPop{to{transform:none;opacity:1}}
+@keyframes spRad{to{stroke-dashoffset:0}}
+@keyframes spSu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){#splash *{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
 </head>
 <body>
+<div id="splash" role="status" aria-label="Caricamento">
+ <div class="seme" id="spLogo">R</div>
+ <svg viewBox="0 0 180 70" aria-hidden="true"><path d="M90 0v60"/><path d="M90 10c-6 14-22 22-40 30"/><path d="M90 10c6 14 22 22 40 30"/><path d="M90 22c-10 16-30 26-62 34"/><path d="M90 22c10 16 30 26 62 34"/></svg>
+ <div class="nm" id="spNome">Radici</div>
+ <div class="sb" id="spSub">Ambito Hair Studio</div>
+</div>
+<script>
+/* Splash: resta almeno 2 secondi, si chiude quando i dati sono pronti (al massimo dopo 6) */
+(function(){var s=document.getElementById('splash'),t0=Date.now(),fatto=false;
+ try{if(sessionStorage.getItem('radiciSplash')==='1'){s.remove();window.splashPronto=function(){};return;}}catch(e){}
+ var S=window.RADICI_SEED;
+ function chiudi(){if(fatto)return;fatto=true;s.classList.add('via');try{sessionStorage.setItem('radiciSplash','1');}catch(e){}setTimeout(function(){s.remove();},600);}
+ window.splashDati=function(c){if(fatto||!c)return;if(c.nome)document.getElementById('spNome').textContent=c.nome;if(c.sottotitolo!=null)document.getElementById('spSub').textContent=c.sottotitolo;if(c.logo)document.getElementById('spLogo').innerHTML='<img src="'+String(c.logo).replace(/"/g,'')+'" alt="">';};
+ window.splashPronto=function(){setTimeout(chiudi,Math.max(0,2000-(Date.now()-t0)));};
+ setTimeout(chiudi,6000);})();
+</script>
 <div class="wrap" id="app">
  <header class="top">
   <div class="logo" id="logo">R</div>
