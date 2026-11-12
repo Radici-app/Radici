@@ -292,6 +292,49 @@ onAuthStateChanged(auth, async u => {
   prAuth = true; prova();
 });
 
+/* ---------- solo nell'app Android: tasto Indietro, Google non disponibile, avviso di nuova versione ---------- */
+const APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+if (APP) {
+  document.documentElement.classList.add('in-app');
+  $('lGoogle').hidden = true; // l'accesso con Google dentro l'app richiede la configurazione del nuovo progetto Firebase
+  const N = window.Capacitor.Plugins || {};
+  if (N.App) N.App.addListener('backButton', () => {
+    for (const id of ['dlg', 'prof', 'login']) if (!$(id).hidden) { if (id === 'dlg') ($('dlgNo').hidden ? $('dlgOk') : $('dlgNo')).click(); else $(id).hidden = true; return; }
+    if (PAG !== 'ph') { indietro(); return; }
+    N.App.exitApp();
+  });
+  (async () => {
+    const REPO = 'Radici-app/Radici', AGG = N.Aggiorna;
+    let mia = 0; try { mia = (await (await fetch('versione.json', { cache: 'no-store' })).json()).v || 0; } catch (e) { return; }
+    if (!mia) return;
+    let aperto = false;
+    const controlla = async () => {
+      if (aperto) return;
+      try {
+        const r = await fetch('https://api.github.com/repos/' + REPO + '/releases/latest', { cache: 'no-store' }); if (!r.ok) return;
+        const n = Number((String((await r.json()).tag_name).match(/^app-v1\.(\d+)$/) || [])[1] || 0);
+        let no = ''; try { no = sessionStorage.getItem('aggNo') || ''; } catch (e) {}
+        if (!(n > mia) || no === String(n)) return;
+        aperto = true;
+        const url = 'https://github.com/' + REPO + '/releases/download/app-v1.' + n + '/Radici.apk';
+        if (!await dialogo('Nuova versione disponibile', 'È uscita la versione 1.' + n + ' dell’app (tu hai la 1.' + mia + '). Tocca “Aggiorna”: l’app la scarica da sola, poi conferma nella schermata di Android. I tuoi dati restano.', 'Aggiorna', 'Più tardi')) { try { sessionStorage.setItem('aggNo', String(n)); } catch (e) {} aperto = false; return; }
+        if (!AGG) { location.href = url; aperto = false; return; }
+        if (!(await AGG.puoInstallare()).ok) {
+          if (!await dialogo('Un permesso, una volta sola', 'Android chiede di consentire a questa app di installare gli aggiornamenti. Nella schermata che si apre attiva “Consenti da questa fonte”, poi torna indietro.', 'Apri impostazioni', 'Annulla')) { aperto = false; return; }
+          await AGG.apriPermesso();
+          await new Promise(ok => { const f = () => { if (document.visibilityState === 'visible') { document.removeEventListener('visibilitychange', f); ok(); } }; document.addEventListener('visibilitychange', f); });
+          if (!(await AGG.puoInstallare()).ok) { await avvisa('Senza quel permesso l’aggiornamento non si può installare. Riprova la prossima volta che apri l’app.'); aperto = false; return; }
+        }
+        $('dlgT').textContent = 'Scarico l’aggiornamento…'; $('dlgP').textContent = '0%'; $('dlgOk').hidden = true; $('dlgNo').hidden = true; $('dlg').hidden = false;
+        const h = await AGG.addListener('progresso', e => { $('dlgP').textContent = e.p + '%'; });
+        try { await AGG.installa({ url }); } catch (e) { $('dlg').hidden = true; $('dlgOk').hidden = false; await avvisa('Aggiornamento non riuscito (' + (e && e.message || e) + '). Riprova.'); }
+        finally { h.remove(); $('dlg').hidden = true; $('dlgOk').hidden = false; aperto = false; }
+      } catch (e) { aperto = false; }
+    };
+    setTimeout(controlla, 3500);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') controlla(); });
+  })();
+}
 window.riempiIcone(); try { history.replaceState({ r: 1 }, ''); } catch (e) {}
 mostraP('ph');
-if (!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) && 'serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+if (!APP && 'serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

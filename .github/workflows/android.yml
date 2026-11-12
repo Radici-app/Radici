@@ -1,0 +1,90 @@
+# Compila l'app Android (APK) ogni volta che il sito o l'app cambiano sul ramo main.
+# L'APK firmato finisce nella pagina "Releases" del repository.
+name: App Android
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'app.js'
+      - 'seed.js'
+      - 'icone.js'
+      - 'manifest.webmanifest'
+      - '*.png'
+      - 'app-android/**'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      RADICI_KEY_PASSWORD: ${{ secrets.RADICI_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Crea la chiave di firma (solo la prima volta)
+        if: env.RADICI_KEY_PASSWORD != ''
+        run: |
+          if [ ! -f app-android/firma-app.p12 ]; then
+            keytool -genkeypair -storetype PKCS12 -keystore app-android/firma-app.p12 -alias radici \
+              -keyalg RSA -keysize 3072 -validity 10000 \
+              -storepass "$RADICI_KEY_PASSWORD" -keypass "$RADICI_KEY_PASSWORD" \
+              -dname "CN=Radici, O=Radici, C=IT"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add app-android/firma-app.p12
+            git commit -m "Chiave di firma dell'app, cifrata con la password segreta [skip ci]"
+            git push
+          fi
+
+      - name: Impronte della firma (servono a Firebase per l'accesso con Google)
+        if: env.RADICI_KEY_PASSWORD != ''
+        run: |
+          keytool -list -v -keystore app-android/firma-app.p12 -storetype PKCS12 -storepass "$RADICI_KEY_PASSWORD" | grep -E "SHA1:|SHA256:" | tee impronte.txt
+          { echo "### Impronte della firma dell'app"; echo '```'; cat impronte.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Prepara l'app (copia il sito dentro l'app)
+        working-directory: app-android
+        run: |
+          npm ci --no-audit --no-fund
+          node copia-web.js
+          npx cap sync android
+
+      - name: Compila l'APK
+        working-directory: app-android/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/Radici.apk"
+
+      - name: Salva l'APK tra i file della compilazione
+        uses: actions/upload-artifact@v4
+        with:
+          name: Radici-apk
+          path: Radici.apk
+
+      - name: Pubblica l'APK firmato in Releases
+        if: env.RADICI_KEY_PASSWORD != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-v1.${{ github.run_number }}
+          name: App Android 1.${{ github.run_number }}
+          body: |
+            App Android di Radici, versione 1.${{ github.run_number }}.
+            Scarica Radici.apk dal telefono e installalo.
+          files: Radici.apk
+          make_latest: true

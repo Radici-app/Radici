@@ -1,0 +1,7 @@
+{
+  "appId": "it.radiciapp.prenota",
+  "appName": "Radici",
+  "webDir": "www",
+  "android": { "allowMixedContent": false, "backgroundColor": "#6E7A3C" },
+  "plugins": { "SystemBars": { "insetsHandling": "css" } }
+}
