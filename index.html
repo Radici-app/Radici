@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Radici – Prenota</title>
+<meta name="description" content="Prenota il tuo appuntamento da Radici – Ambito Hair Studio.">
+<meta name="theme-color" content="#F5F4EE">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Radici">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+ --bg:#F5F4EE;--surf:#fff;--ink:#23271A;--mute:#6B705C;--line:#E2E2D5;--soft:#ECEEE2;--head:#2E3420;
+ --acc:#8E9A55;--pri:#4F5A2A;--onpri:#fff;--gold:#B08A4E;--ok:#2F7D5B;--wait:#C0392B;
+ --t1:#E6EAD5;--t2:#EFE6D6;--t3:#E3E8DF;--t4:#F1E9DF;--t5:#E7E3EE;
+ --sh:0 1px 2px rgba(46,52,32,.05),0 14px 26px -20px rgba(46,52,32,.45);
+ --vel:rgba(35,39,26,.5);--barra:rgba(245,244,238,.94);
+ --sat:max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px));--sab:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px));
+ color-scheme:light;box-sizing:border-box;padding-top:var(--sat);padding-bottom:var(--sab)}
+@media(prefers-color-scheme:dark){:root{
+ --bg:#14160F;--surf:#1E2117;--ink:#EEF0E4;--mute:#AEB39B;--line:#33382A;--soft:#272B1E;--head:#E4E9CF;
+ --acc:#B5C27A;--pri:#B5C27A;--onpri:#1B1E12;--gold:#D6B67E;--ok:#6FCF9F;--wait:#FF8A80;
+ --t1:#2A3020;--t2:#30291F;--t3:#232B24;--t4:#2F2722;--t5:#2A2633;
+ --sh:0 1px 2px rgba(0,0,0,.3),0 14px 26px -18px rgba(0,0,0,.7);--vel:rgba(0,0,0,.6);--barra:rgba(20,22,15,.92);color-scheme:dark}}
+*,*::before,*::after{box-sizing:inherit}
+*{-webkit-tap-highlight-color:transparent}
+html{overflow-x:hidden;background:var(--bg)}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Hanken Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:"Fraunces",Georgia,serif;color:var(--head);font-weight:400;margin:0;letter-spacing:-.02em}
+button{font:inherit;color:inherit}
+button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+[hidden]{display:none!important}
+.wrap{width:100%;max-width:560px;margin:0 auto;padding:0 18px 120px}
+@media(min-width:820px){.wrap{max-width:860px;padding:0 32px 130px}}
+.top{display:flex;align-items:center;gap:11px;padding:16px 0 4px}
+.logo{width:46px;height:46px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font:600 1.15rem "Fraunces",serif;flex:none;overflow:hidden}
+.logo img{width:100%;height:100%;object-fit:cover}
+.brand{flex:1;min-width:0;line-height:1}
+.brand b{display:block;font:600 1.45rem/1 "Fraunces",serif;color:var(--head)}
+.brand span{display:block;margin-top:4px;font-size:.72rem;color:var(--gold);font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+.pill{background:none;border:1.5px solid var(--head);color:var(--head);border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer;white-space:nowrap}
+.cover{position:relative;margin:14px 0 0;height:190px;border-radius:30px;overflow:hidden;background:linear-gradient(135deg,var(--acc),var(--pri))}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover .ct{position:absolute;left:18px;bottom:16px;right:18px;color:#fff}
+.cover .ct h1{color:#fff;font-size:2.2rem;line-height:1.05}
+.cover .ct p{margin:4px 0 0;opacity:.9}
+.cover::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,.45));pointer-events:none}
+.cover .ct{z-index:1}
+section{padding:18px 0 4px}
+h2{font-size:1.9rem;line-height:1.1;margin-bottom:12px}
+.ind{background:none;border:0;color:var(--acc);font-weight:700;padding:14px 0 0;cursor:pointer}
+.hint{color:var(--mute);margin:0 0 14px}
+.gl{margin:18px 0 10px;display:flex;align-items:center;gap:10px;color:var(--head);font:400 1.35rem "Fraunces",serif}
+.gl svg{width:28px;height:28px;color:var(--acc)}
+/* Home a riquadri */
+.menu{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:16px}
+.mt{position:relative;min-width:0;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:10px;border:0;background:var(--c);color:var(--head);text-align:left;cursor:pointer;border-radius:26px;padding:14px;transition:transform .12s}
+.mt:active{transform:scale(.97)}
+.mt svg{width:34px;height:34px;flex:none}
+.mt b{font-weight:700;font-size:.85rem;line-height:1.15;overflow-wrap:anywhere;hyphens:auto}
+.mt.big{grid-column:span 2;min-height:150px;padding:18px;border-radius:32px}
+.mt.big svg{width:54px;height:54px}
+.mt.big b{font:400 1.35rem/1.1 "Fraunces",serif}
+.mt.sm{min-height:104px}
+.mt .mn{position:absolute;top:10px;right:10px;min-width:22px;height:22px;padding:0 6px;border-radius:99px;background:var(--pri);color:var(--onpri);font-size:.75rem;font-weight:700;display:grid;place-items:center}
+.mt .mn:empty{display:none}
+/* Servizi */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:620px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.sv{position:relative;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-height:132px;padding:14px;border:1.5px solid var(--line);border-radius:24px;background:var(--surf);text-align:left;cursor:pointer;transition:background .15s,border-color .15s,opacity .15s}
+.sv svg{width:36px;height:36px;color:var(--acc)}
+.sv b{font-weight:600;line-height:1.2;overflow-wrap:anywhere;hyphens:auto}
+.sv small{color:var(--mute);font-size:.82rem;margin-top:auto}
+.sv[aria-pressed="true"]{background:var(--t1);border-color:var(--pri)}
+.sv[aria-pressed="true"]::after{content:"✓";position:absolute;top:10px;right:12px;width:24px;height:24px;border-radius:50%;background:var(--pri);color:var(--onpri);display:grid;place-items:center;font-size:.8rem;font-weight:700}
+.sv.off{opacity:.38}
+.sv .inf{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line);background:var(--surf);color:var(--mute);font:700 .8rem Georgia,serif;display:grid;place-items:center}
+.sv[aria-pressed="true"] .inf{display:none}
+/* Listino */
+.acc{border:1.5px solid var(--line);border-radius:22px;background:var(--surf);margin-bottom:12px;overflow:hidden}
+.acc>button{width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;background:none;border:0;cursor:pointer;text-align:left}
+.acc>button svg{width:30px;height:30px;color:var(--acc);flex:none}
+.acc>button b{flex:1;font:400 1.2rem "Fraunces",serif;color:var(--head)}
+.acc>button i{font-style:normal;color:var(--mute);transition:transform .2s}
+.acc[open]>button i{transform:rotate(180deg)}
+.acc .ls{border-top:1px solid var(--line)}
+.lr{display:flex;gap:12px;padding:12px 16px;border-top:1px solid var(--line)}
+.lr:first-child{border-top:0}
+.lr .t{flex:1;min-width:0}
+.lr .t b{display:block;font-weight:600}
+.lr .t small{display:block;color:var(--mute);font-size:.84rem;margin-top:2px}
+.lr .p{text-align:right;white-space:nowrap;font-size:.92rem}
+.lr .p b{display:block;color:var(--head)}
+.lr .p span{color:var(--mute);font-size:.84rem}
+/* Operatori, calendario, orari */
+.ops{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.op{display:flex;align-items:center;gap:12px;padding:12px;border:1.5px solid var(--line);border-radius:22px;background:var(--surf);cursor:pointer;text-align:left;min-width:0}
+.op[aria-pressed="true"]{background:var(--t1);border-color:var(--pri)}
+.av{width:46px;height:46px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--soft);color:var(--pri);font-weight:700;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover}
+.op b{font-weight:600;overflow-wrap:anywhere}
+.cal{background:var(--surf);border-radius:26px;padding:14px;box-shadow:var(--sh);margin-bottom:14px}
+.calh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.calh b{font:400 1.45rem "Fraunces",serif;color:var(--head);text-transform:capitalize}
+.calh button{width:40px;height:40px;border-radius:50%;border:0;background:var(--soft);font-size:1.2rem;cursor:pointer;color:var(--head)}
+.calh button:disabled{opacity:.3}
+.cg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}
+.cg .wd{font-size:.78rem;font-weight:700;color:var(--mute);padding:6px 0}
+.cg button{aspect-ratio:1;border:0;border-radius:50%;background:none;font-weight:600;cursor:pointer;color:var(--ink)}
+.cg button:disabled{opacity:.25;cursor:not-allowed;font-weight:400}
+.cg button[aria-pressed="true"]{background:var(--pri);color:var(--onpri)}
+.slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.slot{padding:12px 4px;border-radius:14px;border:1.5px solid var(--line);background:var(--surf);font-weight:600;cursor:pointer}
+.slot[aria-pressed="true"]{background:var(--pri);border-color:var(--pri);color:var(--onpri)}
+/* Card, moduli, pulsanti */
+.row{background:var(--surf);border-radius:24px 24px 24px 8px;padding:16px 18px;margin-bottom:12px;box-shadow:var(--sh)}
+.row small{display:block;color:var(--mute)}
+label{display:block;font-weight:500;font-size:.88rem;color:var(--mute);margin:0 0 14px}
+input,textarea{display:block;width:100%;margin-top:6px;padding:14px;font:inherit;color:var(--ink);background:var(--surf);border:1.5px solid var(--line);border-radius:14px}
+input:focus{outline:none;border-color:var(--acc)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.err{color:var(--wait);font-weight:500;min-height:1.4em;margin:0 0 6px}
+.cta{display:block;width:100%;max-width:440px;margin:22px auto 0;padding:16px;border:0;border-radius:999px;background:var(--pri);color:var(--onpri);font-weight:700;font-size:1rem;cursor:pointer;box-shadow:0 14px 26px -16px var(--pri)}
+.cta:disabled{opacity:.55}
+.cta.load{color:transparent!important;position:relative;pointer-events:none}
+.cta.load::after{content:"";position:absolute;inset:0;margin:auto;width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;animation:spin .8s linear infinite}
+.link{background:none;border:0;color:var(--acc);font-weight:700;padding:8px 0;cursor:pointer}
+.ghost{display:block;width:100%;padding:13px;border-radius:999px;border:1.5px solid var(--pri);background:none;color:var(--pri);font-weight:700;cursor:pointer;text-align:center;text-decoration:none;margin-top:10px}
+#barra{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;align-items:center;gap:12px;padding:12px 18px calc(12px + var(--sab));background:var(--barra);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+#barra span{flex:1;min-width:0;font-weight:600;color:var(--head);line-height:1.25}
+#barra span small{display:block;color:var(--mute);font-weight:500}
+#barra .cta{margin:0;width:auto;padding:13px 26px;flex:none}
+/* Info negozio */
+.qa{display:flex;justify-content:center;gap:12px;margin:16px 0 4px}
+.qa a,.qa button{width:54px;height:54px;border-radius:18px;border:1.5px solid var(--line);background:var(--surf);display:grid;place-items:center;color:var(--head);cursor:pointer}
+.qa svg{width:26px;height:26px}
+.kv h3{font-size:1.25rem;margin:18px 0 6px;color:var(--acc)}
+.orw{display:grid;grid-template-columns:3.4rem 1fr;gap:8px;padding:7px 12px;border-radius:999px}
+.orw.oggi{background:var(--acc);color:#fff}
+.stf{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.stf .op{flex:none;width:160px;cursor:default}
+/* Prenotazioni */
+.bk{display:flex;gap:12px;margin-bottom:12px}
+.bk .dt{flex:none;width:76px;text-align:center;border-radius:18px;overflow:hidden;border:1.5px solid var(--line);background:var(--surf)}
+.bk .dt i{display:block;font-style:normal;background:var(--head);color:var(--bg);font-size:.72rem;font-weight:700;letter-spacing:.08em;padding:3px 0;text-transform:uppercase}
+.bk .dt b{display:block;font:600 1.9rem/1.1 "Fraunces",serif;color:var(--head)}
+.bk .dt span{display:block;font-size:.75rem;color:var(--mute);text-transform:uppercase}
+.bk .dt em{display:block;font-style:normal;background:var(--acc);color:#fff;font-weight:700;font-size:.82rem;padding:3px 0}
+.bk .bd{flex:1;min-width:0;background:var(--surf);border:1.5px solid var(--line);border-radius:18px;padding:12px;position:relative}
+.bk .bd .who{display:flex;align-items:center;gap:10px;font-weight:600}
+.bk .bd .av{width:36px;height:36px}
+.chip{display:inline-block;margin:8px 6px 0 0;padding:4px 10px;border-radius:999px;background:var(--soft);font-size:.82rem}
+.bk .x{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:10px;border:0;background:var(--wait);color:#fff;font-weight:700;cursor:pointer}
+.bk.ann{opacity:.55}
+/* Finestre */
+.calq{position:fixed;inset:0;z-index:70;background:var(--vel);display:flex;align-items:center;justify-content:center;padding:20px}
+.calq>div{background:var(--surf);border-radius:28px;padding:24px 22px;max-width:400px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 24px 60px -12px rgba(0,0,0,.5)}
+.calq h3{font-size:1.6rem;margin:0 0 8px}
+.calq p{color:var(--mute);margin:0 0 16px}
+.calq .bt{display:grid;gap:10px}
+.calq .bt button{padding:14px;border-radius:999px;border:1.5px solid var(--pri);font-weight:700;cursor:pointer}
+.calq .si{background:var(--pri);color:var(--onpri)}
+.calq .no{background:none;color:var(--pri);border-color:var(--line)!important}
+.toast{position:fixed;left:50%;bottom:calc(90px + var(--sab));transform:translateX(-50%);z-index:80;background:var(--head);color:var(--bg);padding:11px 18px;border-radius:999px;font-weight:600;max-width:90vw;text-align:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{width:32px;height:32px;margin:30px auto;border-radius:50%;border:3px solid var(--soft);border-top-color:var(--acc);animation:spin .9s linear infinite}
+.vuoto{text-align:center;color:var(--mute);padding:30px 10px}
+.ok{width:72px;height:72px;border-radius:50%;background:var(--ok);color:#fff;display:grid;place-items:center;font-size:34px;margin:10px 0 16px}
+.prof{text-align:center;padding-top:10px}
+.prof .av{width:96px;height:96px;margin:0 auto 10px;font-size:2rem}
+.pmenu{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:18px}
+.pmenu button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 6px;border:1.5px solid var(--line);border-radius:20px;background:var(--surf);cursor:pointer;color:var(--head);font-weight:600;font-size:.85rem}
+.pmenu svg{width:30px;height:30px;color:var(--acc)}
+.ver{text-align:right;color:var(--mute);font-size:.8rem;margin-top:30px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+ <header class="top">
+  <div class="logo" id="logo">R</div>
+  <div class="brand"><b id="bNome">Radici</b><span id="bSub">Ambito Hair Studio</span></div>
+  <button class="pill" id="cBtn">Accedi</button>
+ </header>
+
+ <main id="pagine">
+  <div id="ph" class="p">
+   <div class="cover" id="cover"><div class="ct"><h1 id="hTit">Benvenuto</h1><p id="hSub">Prenota in pochi tocchi</p></div></div>
+   <div class="menu">
+    <button class="mt big" data-go="pi" style="--c:var(--t1)"><span class="mn" id="nChiuso"></span><svg data-i="negozio"></svg><b>Informazioni negozio</b></button>
+    <button class="mt big" data-go="p1" style="--c:var(--t2)"><svg data-i="calendarioPiu"></svg><b>Nuova prenotazione</b></button>
+    <button class="mt sm" data-go="pf" style="--c:var(--t3)"><svg data-i="carta"></svg><b>Fidelity Card</b></button>
+    <button class="mt sm" data-go="pl" style="--c:var(--t4)"><svg data-i="listino"></svg><b>Listino</b></button>
+    <button class="mt sm" data-go="pm" style="--c:var(--t5)"><span class="mn" id="nMie"></span><svg data-i="calendario"></svg><b>Prenota&shy;zioni</b></button>
+    <button class="mt sm" data-go="pp" style="--c:var(--t1)"><svg data-i="utente"></svg><b>Profilo</b></button>
+   </div>
+  </div>
+
+  <div id="pi" class="p" hidden><button class="ind" data-back>‹ Indietro</button>
+   <section class="kv"><h2 id="iNome">Radici</h2>
+    <div class="qa" id="iQa"></div>
+    <div id="iChiuso"></div>
+    <div id="iAddr"></div>
+    <h3>Descrizione</h3><p id="iDesc" style="margin:0"></p>
+    <h3>Lo staff</h3><div class="stf" id="iStaff"></div>
+    <h3>Orari di apertura</h3><div id="iOrari"></div>
+   </section></div>
+
+  <div id="pl" class="p" hidden><button class="ind" data-back>‹ Indietro</button><section><h2>Listino</h2><div id="lAcc"></div></section></div>
+
+  <div id="pf" class="p" hidden><button class="ind" data-back>‹ Indietro</button><section><h2>Fidelity Card</h2><div class="row"><b>In arrivo</b><small>Presto potrai raccogliere i timbri a ogni visita e ottenere premi.</small></div></section></div>
+
+  <div id="p1" class="p" hidden><button class="ind" data-back>‹ Indietro</button><section><h2>Scegli i servizi</h2><p class="hint" id="h1"></p><div id="sGrid"></div></section></div>
+
+  <div id="p2" class="p" hidden><button class="ind" data-back>‹ Servizi</button><section><h2>Con chi?</h2><div class="ops" id="oList"></div></section></div>
+
+  <div id="p3" class="p" hidden><button class="ind" data-back>‹ Operatore</button><section><h2>Giorno e ora</h2><div id="dCal"></div><div id="dSlots" class="slots"></div><p class="hint" id="dMsg" style="margin-top:10px"></p></section></div>
+
+  <div id="p4" class="p" hidden><button class="ind" data-back>‹ Giorno e ora</button><section><h2>Conferma</h2>
+   <div class="row" id="riep"></div>
+   <div id="cLogin" hidden><p class="hint">Per prenotare accedi: ritrovi le tue prenotazioni su ogni dispositivo.</p><button class="cta" id="cAccedi" style="margin-top:0">Accedi o registrati</button></div>
+   <div id="cDati" hidden>
+    <div class="two"><label>Nome<input id="fNome" autocomplete="given-name"></label><label>Cognome<input id="fCogn" autocomplete="family-name"></label></div>
+    <label>Telefono<input id="fTel" type="tel" autocomplete="tel"></label>
+    <label>Note (facoltative)<input id="fNote" maxlength="200"></label>
+    <p class="err" id="err" role="alert"></p>
+    <button class="cta" id="bConf">Conferma prenotazione</button>
+   </div></section></div>
+
+  <div id="p5" class="p" hidden><section><div class="ok">✓</div><h2>Prenotazione confermata</h2><p class="hint" id="okTxt"></p>
+   <a class="ghost" id="okCal" target="_blank" rel="noopener">📅 Aggiungi al calendario</a>
+   <button class="cta" data-go="pm">Le mie prenotazioni</button><button class="ghost" data-go="ph">Torna alla home</button></section></div>
+
+  <div id="pm" class="p" hidden><button class="ind" data-back>‹ Indietro</button><section><h2>Prenotazioni</h2>
+   <div style="display:flex;gap:8px;margin-bottom:14px"><button class="pill" id="mFut" aria-pressed="true">In programma</button><button class="pill" id="mSto" style="opacity:.6">Storico</button></div>
+   <div id="mList"></div></section></div>
+
+  <div id="pp" class="p" hidden><button class="ind" data-back>‹ Indietro</button><section class="prof">
+   <div class="av" id="pAv">?</div><h2 id="pNome" style="margin:0">Ospite</h2><p class="hint" id="pMail"></p>
+   <div class="pmenu">
+    <button id="pMod"><svg data-i="utente"></svg>Modifica profilo</button>
+    <button data-go="pv"><svg data-i="scudo"></svg>Privacy</button>
+    <button data-go="pt"><svg data-i="listino"></svg>Termini</button>
+    <button id="pDel"><svg data-i="cestino"></svg>Cancella profilo</button>
+    <button id="pOut"><svg data-i="esci"></svg>Esci</button>
+   </div>
+   <p class="ver">versione <span id="pVer">1.0</span></p></section></div>
+
+  <div id="pv" class="p" hidden><button class="ind" data-back>‹ Indietro</button><section><h2>Privacy</h2><div class="row" id="tPriv">Informativa sulla privacy in preparazione.</div></section></div>
+  <div id="pt" class="p" hidden><button class="ind" data-back>‹ Indietro</button><section><h2>Termini e condizioni</h2><div class="row" id="tTerm">Termini e condizioni in preparazione.</div></section></div>
+ </main>
+</div>
+
+<div id="barra" hidden><span id="btxt"></span><button class="cta" id="bNext">Continua</button></div>
+
+<div class="calq" id="login" hidden role="dialog" aria-modal="true"><div>
+ <div style="text-align:right"><button class="link" id="lX">✕ Chiudi</button></div>
+ <h3>Accedi o registrati</h3>
+ <button class="cta" id="lGoogle" style="margin-top:6px">Accedi con Google</button>
+ <p class="hint" style="text-align:center;margin:14px 0 6px">oppure con email e password</p>
+ <label>Email<input id="lMail" type="email" autocomplete="email"></label>
+ <label>Password<input id="lPass" type="password" autocomplete="current-password" placeholder="almeno 6 caratteri"></label>
+ <button class="cta" id="lIn" style="margin-top:0">Accedi</button>
+ <button class="link" id="lReg" style="display:block;margin:8px auto 0">Non hai un account? Registrati</button>
+ <button class="link" id="lRes" style="display:block;margin:0 auto">Password dimenticata?</button>
+ <p class="err" id="lErr" role="alert"></p>
+</div></div>
+<div class="calq" id="dlg" hidden role="dialog" aria-modal="true" style="z-index:90"><div><h3 id="dlgT"></h3><p id="dlgP"></p><div class="bt"><button class="si" id="dlgOk"></button><button class="no" id="dlgNo"></button></div></div></div>
+<div class="calq" id="prof" hidden role="dialog" aria-modal="true"><div>
+ <h3>I tuoi dati</h3>
+ <div class="two"><label>Nome<input id="eNome"></label><label>Cognome<input id="eCogn"></label></div>
+ <label>Telefono<input id="eTel" type="tel"></label>
+ <p class="err" id="eErr"></p>
+ <div class="bt"><button class="si" id="eOk">Salva</button><button class="no" id="eNo">Annulla</button></div>
+</div></div>
+
+<script src="seed.js"></script>
+<script src="icone.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
