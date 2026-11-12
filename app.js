@@ -34,7 +34,7 @@ let BUSY = [], busyOk = false, utente = null, PROF = null, MIE = [], mieOk = fal
 let sel = [], staffSel = 'any', giorno = null, ora = null, mese = null;
 let prCfg = false, prAuth = false;
 const prova = () => { if (prCfg && prAuth && window.splashPronto) window.splashPronto(); };
-onSnapshot(doc(db, 'saloni', SALONE), s => { if (s.exists()) { C = Object.assign(cp(window.RADICI_SEED), s.data()); window.splashDati && window.splashDati(C); sel = sel.filter(id => serv(id)); ridisegna(); } prCfg = true; prova(); }, () => { prCfg = true; prova(); });
+onSnapshot(doc(db, 'saloni', SALONE), s => { if (s.exists()) { C = Object.assign(cp(window.RADICI_SEED), window.fasceDaDb(s.data())); window.splashDati && window.splashDati(C); sel = sel.filter(id => serv(id)); ridisegna(); } prCfg = true; prova(); }, () => { prCfg = true; prova(); });
 onSnapshot(colB, s => { BUSY = s.docs.map(d => d.data()); busyOk = true; if (PAG === 'p3') renderSlots(); }, () => { busyOk = true; });
 
 const serv = id => C.servizi.find(s => s.id === id);

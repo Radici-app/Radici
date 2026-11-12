@@ -97,3 +97,16 @@ window.RADICI_SEED = {
     ['combo', 'Re-fresh + barba American trend', '25 €', 60, 'cuore']
   ].map((s, i) => ({ id: 'v' + (i + 1), cat: s[0], nome: s[1], prezzo: s[2], durata: s[3], icona: s[4], descr: s[5] || '', visibile: true }))
 };
+/* Firestore non accetta liste dentro liste: le fasce orarie si salvano come {da, a} e si rileggono come [da, a] */
+window.fasceDaDb = c => {
+  const f = l => (l || []).map(x => Array.isArray(x) ? x : [x.da, x.a]);
+  if (c && c.orari) Object.keys(c.orari).forEach(g => { c.orari[g] = f(c.orari[g]); });
+  if (c && c.eccezioni) c.eccezioni.forEach(e => { e.fasce = f(e.fasce); });
+  return c;
+};
+window.fasceVersoDb = c => {
+  const o = JSON.parse(JSON.stringify(c)), f = l => (l || []).map(x => Array.isArray(x) ? { da: x[0], a: x[1] } : x);
+  if (o.orari) Object.keys(o.orari).forEach(g => { o.orari[g] = f(o.orari[g]); });
+  if (o.eccezioni) o.eccezioni.forEach(e => { e.fasce = f(e.fasce); });
+  return o;
+};
