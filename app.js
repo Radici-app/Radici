@@ -167,15 +167,19 @@ let alberoFatto = false, alberoMis = '';
 function disegnaAlbero() {
   const el = $('albero'); if (!el || PAG !== 'ph') return;
   const top = el.getBoundingClientRect().top + scrollY, W = Math.round(el.clientWidth), H = Math.min(460, Math.round(innerHeight - top - 14)), sotto = C.sottotitolo || '';
-  const mis = W + 'x' + H + sotto; if (mis === alberoMis) return; alberoMis = mis;
+  const mis = W + 'x' + H + sotto; if (mis === alberoMis) { nonSporgere(el); return; } alberoMis = mis;
   if (H < 170 || W < 160) { el.innerHTML = ''; el.style.height = '0'; return; }
   el.style.height = H + 'px';
-  /* se la pagina è comunque più alta dello schermo (barre di sistema, margini), accorcio lo spazio per non farla scorrere */
-  const extra = document.documentElement.scrollHeight - innerHeight;
-  if (extra > 0) { const h2 = H - extra - 2; if (h2 < 170) { el.innerHTML = ''; el.style.height = '0'; return; } el.style.height = h2 + 'px'; }
+  if (!nonSporgere(el)) return;
   el.innerHTML = '<div class="marchio"></div>';
   window.radiciMarchio(el.firstChild, sotto, !alberoFatto && !document.getElementById('splash')); alberoFatto = true;
   el.firstChild.onclick = () => ricresci();
+}
+/* se la pagina è più alta dello schermo (barre di sistema, margini) accorcio lo spazio della scritta, così la home non scorre */
+function nonSporgere(el) {
+  const extra = document.documentElement.scrollHeight - innerHeight; if (extra <= 0) return true;
+  const h2 = el.offsetHeight - extra - 2; if (h2 < 170) { el.innerHTML = ''; el.style.height = '0'; alberoMis = ''; return false; }
+  el.style.height = h2 + 'px'; return true;
 }
 /* ogni tanto le radici ricrescono da sole (ogni 40 secondi circa, solo con la home in vista); toccando la scritta ricrescono subito */
 let ultimaCrescita = Date.now();
