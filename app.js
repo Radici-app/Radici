@@ -104,9 +104,30 @@ function renderGalleria() {
   if (!galAl || !A.some(a => a.id === galAl)) galAl = A[0].id;
   galL = GA.filter(f => f.album === galAl).sort((a, b) => (a.ordine || 0) - (b.ordine || 0));
   $('iGal').innerHTML = (A.length > 1 ? `<div class="galt">${A.map(a => `<button data-ga="${esc(a.id)}" aria-pressed="${a.id === galAl}">${esc(a.nome)}</button>`).join('')}</div>` : '') +
-    `<div class="gals">${galL.map((f, i) => `<button data-gi="${i}" aria-label="Apri foto ${i + 1}"><img src="${f.mini}" alt="" loading="lazy"></button>`).join('')}</div>`;
+    `<div class="gals">${galL.map((f, i) => `<button data-gi="${i}" aria-label="Apri foto ${i + 1}"${i ? '' : ' class="on"'}><img src="${f.mini}" alt="" loading="lazy"></button>`).join('')}</div>` +
+    (galL.length > 1 ? `<div class="gdot">${galL.map((f, i) => `<i${i ? '' : ' class="on"'}></i>`).join('')}</div>` : '');
   $('iGal').querySelectorAll('[data-ga]').forEach(b => b.onclick = () => { galAl = b.dataset.ga; renderGalleria(); });
   $('iGal').querySelectorAll('[data-gi]').forEach(b => b.onclick = () => apriFoto(+b.dataset.gi));
+  avviaCarosello();
+}
+/* Carosello: la foto al centro è in primo piano, le altre scorrono da sole ogni 3,5 secondi.
+   Si ferma mentre il cliente tocca le foto, quando la pagina non è visibile o se il telefono chiede meno animazioni. */
+let carT = null, carFermo = 0;
+function avviaCarosello() {
+  clearInterval(carT); carT = null;
+  const box = $('iGal').querySelector('.gals'); if (!box) return;
+  const sl = [...box.children], pt = [...$('iGal').querySelectorAll('.gdot i')];
+  const attuale = () => { const c = box.scrollLeft + box.clientWidth / 2; let m = 0, d = 1e9; sl.forEach((b, i) => { const x = Math.abs(b.offsetLeft + b.offsetWidth / 2 - c); if (x < d) { d = x; m = i; } }); return m; };
+  const segna = () => { const i = attuale(); sl.forEach((b, j) => b.classList.toggle('on', j === i)); pt.forEach((p, j) => p.classList.toggle('on', j === i)); };
+  const vai = i => { const b = sl[i]; if (b) box.scrollTo({ left: b.offsetLeft - (box.clientWidth - b.offsetWidth) / 2, behavior: 'smooth' }); };
+  let rq = 0; box.addEventListener('scroll', () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(segna); }, { passive: true });
+  const pausa = () => { carFermo = Date.now() + 6000; };
+  ['touchstart', 'pointerdown', 'wheel'].forEach(ev => box.addEventListener(ev, pausa, { passive: true }));
+  if (sl.length < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  carT = setInterval(() => {
+    if (PAG !== 'pi' || document.hidden || !$('viewer').hidden || Date.now() < carFermo || !box.isConnected) return;
+    const i = attuale(); vai(i >= sl.length - 1 ? 0 : i + 1);
+  }, 3500);
 }
 const grandi = {};
 async function mostraFoto() {
