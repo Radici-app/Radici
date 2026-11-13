@@ -230,3 +230,78 @@ window.compilaLegale = (testo, c) => {
     giorniMax: R.giorniMax, maxAttive: R.maxAttive, maxServizi: R.maxServizi, annullo: durata(R.annulloMin), anticipo: durata(R.anticipoMin) };
   return String(testo || '').replace(/\{\{(\w+)\}\}/g, (_, k) => (v[k] !== undefined && v[k] !== '' && v[k] !== null) ? String(v[k]) : mancante);
 };
+
+/* ---------- FIDELITY CARD: regole di partenza (si cambiano dalla dashboard → Fidelity Card → Impostazioni) ---------- */
+window.RADICI_SEED.fidelity = {
+  attiva: true,
+  validitaMesi: 12,
+  /* punti per appuntamento in base alla spesa: da quell'importo in su (fino allo scaglione dopo) */
+  scaglioni: [{ da: 0, punti: 5 }, { da: 15, punti: 10 }, { da: 25, punti: 15 }, { da: 35, punti: 20 }, { da: 50, punti: 25 }, { da: 70, punti: 30 }],
+  /* maxMese 0 = senza limite */
+  bonus: [
+    { id: 'ripren', nome: 'Riprenotazione immediata', punti: 5, maxMese: 1, nota: '' },
+    { id: 'insta', nome: 'Storia Instagram con tag @radici_ambitohs', punti: 5, maxMese: 1, nota: '' },
+    { id: 'amico', nome: 'Presenta un amico', punti: 20, maxMese: 0, nota: 'dopo il suo primo servizio pagato' },
+    { id: 'combo', nome: 'Barber + Estetica nella stessa visita', punti: 10, maxMese: 0, nota: '' }
+  ],
+  premi: [
+    { id: 'p60', punti: 60, nome: 'Gold Mask' },
+    { id: 'p100', punti: 100, nome: 'Hairspa o Beardspa' },
+    { id: 'p150', punti: 150, nome: 'Pulizia viso express' },
+    { id: 'p200', punti: 200, nome: 'Taglio gratuito' },
+    { id: 'p250', punti: 250, nome: '50% di sconto su Skin Bloom' },
+    { id: 'p350', punti: 350, nome: 'Premium Experience' }
+  ],
+  regolamento: ''
+};
+/* Regolamento standard. Le liste {{scaglioni}}, {{bonus}} e {{premi}} si scrivono da sole con i valori impostati. */
+window.RADICI_SEED.regolamentoFid = `## Regolamento Fidelity Card {{nome}}
+## Chi può partecipare?
+La Fidelity Card è gratuita, personale e riservata esclusivamente ai clienti registrati sull'app ufficiale {{nome}}. Senza l'app non è possibile accumulare punti o riscattare premi.
+## Come si accumulano i punti?
+Ogni appuntamento genera punti in base alla spesa effettuata, sia per i servizi Barber che Nails & Beauty.
+{{scaglioni}}
+## Bonus fedeltà
+{{bonus}}
+## Catalogo premi
+{{premi}}
+## Regole generali
+I punti sono validi {{validita}} dall'accredito, non sono trasferibili né convertibili in denaro. Ogni premio riscattato comporta la sottrazione dei punti necessari.
+I premi sono riscattabili esclusivamente in salone, previa disponibilità. I servizi gratuiti non generano punti. I bonus sono cumulabili nel rispetto delle condizioni indicate.
+Per informazioni o assistenza, rivolgiti al nostro staff.
+## {{nome}}
+*La tua fedeltà merita di essere premiata!*`;
+
+window.FID = (() => {
+  const euro = n => (Math.round(n * 100) / 100).toLocaleString('it-IT', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' €';
+  const ordina = f => (f.scaglioni || []).slice().sort((a, b) => a.da - b.da);
+  /* punti di un appuntamento in base all'importo speso (0 € = servizio gratuito = 0 punti) */
+  const puntiPer = (importo, f) => { if (!(importo > 0)) return 0; let p = 0; ordina(f).forEach(s => { if (importo >= s.da) p = s.punti; }); return p; };
+  const piuMesi = (k, m) => { const d = new Date(k + 'T12:00'); d.setMonth(d.getMonth() + m); const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); };
+  /* saldo con scadenza: i punti guadagnati scadono dopo N mesi; i premi consumano prima i punti più vecchi */
+  const saldo = (movs, f, oggi) => {
+    const mesi = f.validitaMesi || 12, L = movs.slice().sort((a, b) => (a.data + (a.punti < 0 ? 1 : 0) + (a.ts || 0)).localeCompare(b.data + (b.punti < 0 ? 1 : 0) + (b.ts || 0)));
+    const cred = [];
+    L.forEach(m => {
+      if (m.punti > 0) cred.push({ data: m.data, scad: piuMesi(m.data, mesi), resto: m.punti });
+      else if (m.punti < 0) { let da = -m.punti; for (const c of cred) { if (c.scad <= m.data || !c.resto) continue; const x = Math.min(c.resto, da); c.resto -= x; da -= x; if (!da) break; } }
+    });
+    const vivi = cred.filter(c => c.scad > oggi && c.resto > 0), tra30 = piuMesi(oggi, 1);
+    const scadenza = vivi.filter(c => c.scad <= tra30).reduce((a, c) => { a.punti += c.resto; a.data = a.data && a.data < c.scad ? a.data : c.scad; return a; }, { punti: 0, data: '' });
+    return { saldo: vivi.reduce((a, c) => a + c.resto, 0), scadenza };
+  };
+  /* quante volte un bonus è già stato dato a un cliente in quel mese (escluso un movimento) */
+  const usiMese = (movs, uid, bid, k, tranneId) => movs.filter(m => m.uid === uid && m.bonus === bid && String(m.data).slice(0, 7) === String(k).slice(0, 7) && m.id !== tranneId).length;
+  const righeScaglioni = f => { const S = ordina(f); return S.map((s, i) => { const n = S[i + 1]; return '- ' + (i === 0 && !s.da ? 'Fino a ' + euro(n ? n.da - .01 : 0) : n ? 'Da ' + euro(s.da) + ' a ' + euro(n.da - .01) : 'Da ' + euro(s.da) + ' in su') + ' → ' + s.punti + ' punti'; }).join('\n'); };
+  const righeBonus = f => (f.bonus || []).map(b => '- ' + b.nome + ': +' + b.punti + ' punti' + (b.nota ? ' ' + b.nota : '') + (b.maxMese ? ' (max ' + b.maxMese + ' al mese)' : '') + '.').join('\n');
+  const righePremi = f => (f.premi || []).slice().sort((a, b) => a.punti - b.punti).map(p => '- ' + p.punti + ' punti → ' + p.nome).join('\n');
+  const testo = (f, c) => String(f.regolamento || window.RADICI_SEED.regolamentoFid)
+    .replace(/\{\{scaglioni\}\}/g, righeScaglioni(f)).replace(/\{\{bonus\}\}/g, righeBonus(f)).replace(/\{\{premi\}\}/g, righePremi(f))
+    .replace(/\{\{validita\}\}/g, (f.validitaMesi || 12) + ' mesi').replace(/\{\{nome\}\}/g, c.nome || '');
+  /* testo con ## titoli, - elenchi, *corsivo* → HTML */
+  const html = (f, c, esc) => testo(f, c).split('\n').map(r => r.trim()).filter(Boolean).map(r => {
+    const it = s => esc(s).replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    return r.startsWith('## ') ? `<h3>${it(r.slice(3))}</h3>` : r.startsWith('- ') ? `<p class="li">${it(r.slice(2))}</p>` : `<p>${it(r)}</p>`;
+  }).join('');
+  return { puntiPer, saldo, usiMese, html, euro, piuMesi };
+})();

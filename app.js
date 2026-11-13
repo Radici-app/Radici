@@ -7,7 +7,7 @@ const VERSIONE = '1.0';
 const SALONE = 'radici';
 const fbApp = initializeApp({ apiKey: 'AIzaSyCUhd6pXSheUQ6gPhT5OfvprM5dYI2uxz4', authDomain: 'radici-app.firebaseapp.com', projectId: 'radici-app', storageBucket: 'radici-app.firebasestorage.app', messagingSenderId: '602201707324', appId: '1:602201707324:web:88d8681280de279b81c439' });
 const auth = getAuth(fbApp), db = getFirestore(fbApp);
-const colP = collection(db, 'saloni', SALONE, 'prenotazioni'), colB = collection(db, 'saloni', SALONE, 'busy'), colA = collection(db, 'saloni', SALONE, 'avvisi'), colG = collection(db, 'saloni', SALONE, 'galleria');
+const colP = collection(db, 'saloni', SALONE, 'prenotazioni'), colB = collection(db, 'saloni', SALONE, 'busy'), colA = collection(db, 'saloni', SALONE, 'avvisi'), colG = collection(db, 'saloni', SALONE, 'galleria'), colF = collection(db, 'saloni', SALONE, 'punti');
 
 /* ---------- utilità ---------- */
 const $ = id => document.getElementById(id);
@@ -60,7 +60,7 @@ function mostraP(p) {
   if (p === 'p4' && ora == null) p = 'p3';
   document.querySelectorAll('#pagine>.p').forEach(e => e.hidden = e.id !== p);
   PAG = p;
-  ({ ph: renderHome, pi: renderInfo, pl: renderListino, p1: renderServizi, p2: renderOperatori, p3: renderGiorni, p4: renderConferma, pm: renderMie, pp: renderProfilo, pv: aggLegali, pa: renderAvvisi, pt: aggLegali })[p]?.();
+  ({ ph: renderHome, pi: renderInfo, pl: renderListino, p1: renderServizi, p2: renderOperatori, p3: renderGiorni, p4: renderConferma, pm: renderMie, pp: renderProfilo, pv: aggLegali, pa: renderAvvisi, pt: aggLegali, pf: renderFid, pr: renderReg })[p]?.();
   aggBarra(); scrollTo(0, 0);
 }
 function vai(p) { if (p === 'ph') STORIA = ['ph']; else if (STORIA[STORIA.length - 1] !== p) { STORIA.push(p); try { history.pushState({ r: STORIA.length }, ''); } catch (e) {} } mostraP(p); }
@@ -351,6 +351,29 @@ function testoLegale(t) {
   return window.compilaLegale(t, C).split('\n').map(r => r.trim()).filter(Boolean).map(r =>
     r.startsWith('## ') ? `<h3>${esc(r.slice(3))}</h3>` : r.startsWith('- ') ? `<p class="li">${esc(r.slice(2))}</p>` : `<p>${esc(r)}</p>`).join('');
 }
+/* ---------- Fidelity Card: saldo punti, premio successivo, catalogo, movimenti ---------- */
+const fidCfg = () => Object.assign(cp(window.RADICI_SEED.fidelity), C.fidelity || {});
+const TIPIF = { visita: 'Visita', bonus: 'Bonus', premio: 'Premio ritirato', rettifica: 'Correzione' };
+function renderFid() {
+  const f = fidCfg(), el = $('fCard');
+  if (!f.attiva) { el.innerHTML = '<div class="row"><b>In arrivo</b><small>Presto potrai raccogliere punti a ogni visita e ottenere premi.</small></div>'; return; }
+  const regBtn = '<button class="cta sec" data-go="pr">Leggi il regolamento</button>';
+  if (!utente) { el.innerHTML = `<div class="row"><b>Raccogli punti a ogni visita</b><small>La Fidelity Card è riservata ai clienti registrati nell’app: accedi per vedere i tuoi punti e i premi.</small></div><button class="cta" id="fAcc">Accedi</button>${regBtn}`; $('fAcc').onclick = apriLogin; return; }
+  if (!fidOk) { el.innerHTML = '<div class="spin"></div>'; return; }
+  const s = window.FID.saldo(FMIE, f, oggi()), premi = (f.premi || []).slice().sort((a, b) => a.punti - b.punti);
+  const prossimo = premi.find(p => p.punti > s.saldo), pronti = premi.filter(p => p.punti <= s.saldo);
+  const nome = PROF && (PROF.nome || PROF.cogn) ? (PROF.nome + ' ' + (PROF.cogn || '')).trim() : (utente.displayName || '');
+  const M = FMIE.slice().sort((a, b) => (b.data + (b.ts || 0)).localeCompare(a.data + (a.ts || 0))).slice(0, 30);
+  el.innerHTML = `<div class="fcard"><svg viewBox="0 0 200 120" preserveAspectRatio="xMaxYMax slice" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-linecap="round"><path d="M150 0c2 30-6 50-24 66s-26 34-24 54"/><path d="M150 0c4 28 18 44 34 56s16 40 12 64" stroke-width=".8"/><path d="M126 66c-14 4-28 14-34 30" stroke-width=".8"/><path d="M168 30c10 8 20 10 32 8" stroke-width=".6"/><path d="M110 92c8 6 12 16 12 28" stroke-width=".6"/></g></svg>
+     <div class="fc-top"><span>Fidelity Card</span><b>${esc(C.nome)}</b></div><div class="fc-pt"><b>${s.saldo}</b><span>${s.saldo === 1 ? 'punto' : 'punti'}</span></div><div class="fc-nome">${esc(nome)}</div></div>
+   ${prossimo ? `<div class="row fprog"><small>Ti mancano <b>${prossimo.punti - s.saldo} punti</b> per</small><b>${esc(prossimo.nome)}</b><div class="fbar"><i style="width:${Math.min(100, s.saldo / prossimo.punti * 100)}%"></i></div></div>` : ''}
+   ${pronti.length ? `<div class="row fok"><b>🎁 Puoi già richiedere in salone</b><small>${pronti.map(p => esc(p.nome)).join(' · ')}</small></div>` : ''}
+   ${s.scadenza.punti ? `<p class="hint">${s.scadenza.punti} punti scadono il ${new Date(s.scadenza.data + 'T12:00').toLocaleDateString('it-IT')}: usali prima!</p>` : ''}
+   <h3 class="fh">Catalogo premi</h3><div class="row">${premi.map(p => `<div class="fpr${p.punti <= s.saldo ? ' ok' : ''}"><span>${p.punti}</span><b>${esc(p.nome)}</b>${p.punti <= s.saldo ? '<i>✓</i>' : ''}</div>`).join('')}</div>
+   ${regBtn}
+   <h3 class="fh">I tuoi movimenti</h3>${M.length ? `<div class="row">${M.map(m => `<div class="fmv"><div><b>${TIPIF[m.tipo] || ''}</b><small>${new Date(m.data + 'T12:00').toLocaleDateString('it-IT')}${m.nota ? ' · ' + esc(m.nota) : ''}</small></div><span class="${m.punti < 0 ? 'meno' : ''}">${m.punti > 0 ? '+' : ''}${m.punti}</span></div>`).join('')}</div>` : '<p class="vuoto">Ancora nessun punto: li ricevi dopo ogni appuntamento in salone.</p>'}`;
+}
+const renderReg = () => { $('tReg').innerHTML = window.FID.html(fidCfg(), C, esc); };
 const aggLegali = () => { $('tPriv').innerHTML = testoLegale(C.privacy || window.RADICI_SEED.privacy); $('tTerm').innerHTML = testoLegale(C.termini || window.RADICI_SEED.termini); };
 function renderProfilo() {
   ['pMod', 'pDel', 'pOut'].forEach(id => $(id).hidden = !utente); $('pIn').hidden = !!utente; $('pBenv').hidden = !!utente; document.querySelector('.pfoto').style.pointerEvents = utente ? '' : 'none'; document.querySelector('.pfoto .cam').hidden = !utente;
@@ -413,14 +436,16 @@ $('lIn').onclick = async () => { if (!await consenso()) return; const m = $('lMa
 $('lReg').onclick = async () => { if (!await consenso()) return; const m = $('lMail').value.trim(), p = $('lPass').value; if (!/^\S+@\S+\.\S+$/.test(m)) { $('lErr').textContent = 'Inserisci un’email valida.'; return; } if (p.length < 6) { $('lErr').textContent = 'Scegli una password di almeno 6 caratteri.'; return; } try { const c = await createUserWithEmailAndPassword(auth, m, p); sendEmailVerification(c.user).catch(() => {}); } catch (e) { $('lErr').textContent = errAuth(e); } };
 $('lRes').onclick = async () => { const m = $('lMail').value.trim(); if (!/^\S+@\S+\.\S+$/.test(m)) { $('lErr').textContent = 'Scrivi la tua email, poi tocca “Password dimenticata?”.'; return; } try { await sendPasswordResetEmail(auth, m); } catch (e) {} $('lErr').textContent = 'Se l’email è registrata, ti abbiamo inviato un link per scegliere una nuova password.'; };
 
-let unsubMie = null;
+let unsubMie = null, unsubFid = null, FMIE = [], fidOk = false;
 onAuthStateChanged(auth, async u => {
   utente = u; PROF = null; MIE = []; mieOk = false;
   if (unsubMie) { unsubMie(); unsubMie = null; }
+  if (unsubFid) { unsubFid(); unsubFid = null; } FMIE = []; fidOk = false;
   if (u) {
     $('login').hidden = true;
     try { const d = await getDoc(doc(db, 'saloni', SALONE, 'clienti', u.uid)); if (d.exists()) PROF = d.data(); } catch (e) {}
     if (!PROF && u.displayName) { const p = u.displayName.split(' '); PROF = { nome: p[0], cogn: p.slice(1).join(' '), tel: '' }; }
+    unsubFid = onSnapshot(query(colF, where('uid', '==', u.uid)), s => { FMIE = s.docs.map(d => d.data()); fidOk = true; if (PAG === 'pf') renderFid(); }, () => { fidOk = true; if (PAG === 'pf') renderFid(); });
     unsubMie = onSnapshot(query(colP, where('uid', '==', u.uid)), s => { MIE = s.docs.map(d => d.data()); mieOk = true; if (PAG === 'pm' || PAG === 'ph') mostraP(PAG); }, () => { mieOk = true; });
   } else if (PAG === 'pm') { STORIA = ['ph']; }
   if (u && consensoDaSalvare) { consensoDaSalvare = false; setDoc(doc(db, 'saloni', SALONE, 'clienti', u.uid), { consenso: { termini: true, privacy: true, data: Date.now() } }, { merge: true }).catch(() => {}); }
