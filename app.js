@@ -7,7 +7,7 @@ const VERSIONE = '1.0';
 const SALONE = 'radici';
 const fbApp = initializeApp({ apiKey: 'AIzaSyCUhd6pXSheUQ6gPhT5OfvprM5dYI2uxz4', authDomain: 'radici-app.firebaseapp.com', projectId: 'radici-app', storageBucket: 'radici-app.firebasestorage.app', messagingSenderId: '602201707324', appId: '1:602201707324:web:88d8681280de279b81c439' });
 const auth = getAuth(fbApp), db = getFirestore(fbApp);
-const colP = collection(db, 'saloni', SALONE, 'prenotazioni'), colB = collection(db, 'saloni', SALONE, 'busy');
+const colP = collection(db, 'saloni', SALONE, 'prenotazioni'), colB = collection(db, 'saloni', SALONE, 'busy'), colA = collection(db, 'saloni', SALONE, 'avvisi');
 
 /* ---------- utilità ---------- */
 const $ = id => document.getElementById(id);
@@ -60,7 +60,7 @@ function mostraP(p) {
   if (p === 'p4' && ora == null) p = 'p3';
   document.querySelectorAll('#pagine>.p').forEach(e => e.hidden = e.id !== p);
   PAG = p;
-  ({ ph: renderHome, pi: renderInfo, pl: renderListino, p1: renderServizi, p2: renderOperatori, p3: renderGiorni, p4: renderConferma, pm: renderMie, pp: renderProfilo, pv: aggLegali, pt: aggLegali })[p]?.();
+  ({ ph: renderHome, pi: renderInfo, pl: renderListino, p1: renderServizi, p2: renderOperatori, p3: renderGiorni, p4: renderConferma, pm: renderMie, pp: renderProfilo, pv: aggLegali, pa: renderAvvisi, pt: aggLegali })[p]?.();
   aggBarra(); scrollTo(0, 0);
 }
 function vai(p) { if (p === 'ph') STORIA = ['ph']; else if (STORIA[STORIA.length - 1] !== p) { STORIA.push(p); try { history.pushState({ r: STORIA.length }, ''); } catch (e) {} } mostraP(p); }
@@ -79,6 +79,21 @@ function aggBarra() {
   $('barra').hidden = !fn; $('btxt').innerHTML = t; $('bNext').onclick = fn;
 }
 
+
+/* ---------- avvisi del salone: visibili a tutti, pallino finché non si leggono ---------- */
+const numWa = t => { const d = String(t).replace(/\D/g, ''); return String(t).trim().startsWith('+') || (d.startsWith('39') && d.length > 10) ? d : '39' + d; };
+let AV = [];
+const avAttivi = () => AV.filter(a => a.scade > Date.now()).sort((a, b) => b.creato - a.creato);
+const letti = () => { try { return +localStorage.getItem('radiciAvvisiLetti') || 0; } catch (e) { return 0; } };
+const nonLetti = () => avAttivi().filter(a => a.creato > letti()).length;
+function aggAvvisi() { const n = nonLetti(); $('nAvv').textContent = n || ''; $('pAvvN').textContent = n || ''; }
+function renderAvvisi() {
+  const l = avAttivi();
+  $('aList').innerHTML = l.length ? l.map(a => `<div class="row avv${a.creato > letti() ? ' nuovo' : ''}"><b>${esc(a.titolo)}</b><small>${new Date(a.creato).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}</small><p>${esc(a.testo)}</p></div>`).join('') : '<p class="vuoto">Nessun avviso dal salone.</p>';
+  try { localStorage.setItem('radiciAvvisiLetti', String(Date.now())); } catch (e) {}
+  aggAvvisi();
+}
+onSnapshot(colA, s => { AV = s.docs.map(d => d.data()); aggAvvisi(); if (PAG === 'pa') renderAvvisi(); }, () => {});
 /* ---------- home e informazioni ---------- */
 function renderTesta() {
   $('bNome').textContent = C.nome; $('bSub').textContent = C.sottotitolo || '';
@@ -103,17 +118,17 @@ function renderHome() {
   if (C.cover) $('cover').insertAdjacentHTML('afterbegin', `<img src="${esc(C.cover)}" alt="">`);
   $('hTit').textContent = utente && PROF && PROF.nome ? 'Ciao ' + PROF.nome : C.nome;
   $('hSub').textContent = C.sottotitolo || 'Prenota in pochi tocchi';
-  const fut = MIE.filter(attiva).length; $('nMie').textContent = fut || '';
+  const fut = MIE.filter(attiva).length; $('nMie').textContent = fut || ''; aggAvvisi();
   const ch = C.chiusure.find(c => c.a >= oggi()); $('nChiuso').textContent = ch ? '!' : '';
   requestAnimationFrame(adattaTesti); if (document.fonts) document.fonts.ready.then(adattaTesti);
 }
 function renderInfo() {
   $('iNome').textContent = C.nome;
   const q = [];
-  if (C.telefono) q.push(`<a href="tel:${esc(C.telefono.replace(/[^\d+]/g, ''))}" aria-label="Chiama">${ico('tel')}</a>`);
-  if (C.whatsapp) q.push(`<a href="https://wa.me/${esc(C.whatsapp.replace(/\D/g, ''))}" target="_blank" rel="noopener" aria-label="WhatsApp">${ico('chat')}</a>`);
-  if (C.instagram) q.push(`<a href="https://instagram.com/${esc(C.instagram.replace(/^@/, ''))}" target="_blank" rel="noopener" aria-label="Instagram">${ico('insta')}</a>`);
-  if (C.indirizzo) q.push(`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(C.indirizzo)}" target="_blank" rel="noopener" aria-label="Navigatore">${ico('mappa')}</a>`);
+  if (C.telefono) q.push(`<a class="qt" href="tel:${esc(C.telefono.replace(/[^\d+]/g, ''))}">${ico('tel')}<span>Chiama</span></a>`);
+  if (C.whatsapp) q.push(`<a class="qw" href="https://wa.me/${esc(numWa(C.whatsapp))}" target="_blank" rel="noopener">${ico('chat')}<span>WhatsApp</span></a>`);
+  if (C.instagram) q.push(`<a class="qi" href="https://instagram.com/${esc(C.instagram.replace(/^@/, ''))}" target="_blank" rel="noopener">${ico('insta')}<span>Instagram</span></a>`);
+  if (C.indirizzo) q.push(`<a class="qm" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(C.indirizzo)}" target="_blank" rel="noopener">${ico('mappa')}<span>Indicazioni</span></a>`);
   $('iQa').innerHTML = q.join(''); $('iQa').hidden = !q.length;
   const ch = C.chiusure.filter(c => c.a >= oggi()).sort((a, b) => a.da.localeCompare(b.da))[0];
   $('iChiuso').innerHTML = ch ? `<div class="row" style="margin-top:14px"><b>Chiuso ${ch.da === ch.a ? dataLunga(ch.da) : 'dal ' + dataLunga(ch.da) + ' al ' + dataLunga(ch.a)}</b>${ch.msg ? `<small>${esc(ch.msg)}</small>` : ''}</div>` : '';
@@ -214,7 +229,7 @@ $('bConf').onclick = async () => {
   const st = lib.sort((a, z) => conta(a.id) - conta(z.id))[0];
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const rec = { id, uid: utente.uid, nome: n, cogn: c, tel: t, mail: utente.email || '', note, data: giorno, ini: ora, fine: ora + dur, dur, staff: st.id, staffNome: st.nome,
-    servizi: scelti().map(s => ({ id: s.id, nome: s.nome, prezzo: s.prezzo, durata: s.durata })), prezzo: prezzoTot(), stato: 'ok', creata: Date.now() };
+    servizi: scelti().map(s => ({ id: s.id, nome: s.nome, prezzo: s.prezzo, durata: s.durata })), prezzo: prezzoTot(), stato: 'ok', orig: (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'app' : 'web', creata: Date.now() };
   try {
     const w = writeBatch(db);
     w.set(doc(colP, id), rec); w.set(doc(colB, id), { data: giorno, ini: ora, fine: ora + dur, staff: st.id });
