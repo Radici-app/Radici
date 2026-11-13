@@ -170,6 +170,9 @@ function disegnaAlbero() {
   const mis = W + 'x' + H + sotto; if (mis === alberoMis) return; alberoMis = mis;
   if (H < 170 || W < 160) { el.innerHTML = ''; el.style.height = '0'; return; }
   el.style.height = H + 'px';
+  /* se la pagina è comunque più alta dello schermo (barre di sistema, margini), accorcio lo spazio per non farla scorrere */
+  const extra = document.documentElement.scrollHeight - innerHeight;
+  if (extra > 0) { const h2 = H - extra - 2; if (h2 < 170) { el.innerHTML = ''; el.style.height = '0'; return; } el.style.height = h2 + 'px'; }
   el.innerHTML = '<div class="marchio"></div>';
   window.radiciMarchio(el.firstChild, sotto, !alberoFatto && !document.getElementById('splash')); alberoFatto = true;
   el.firstChild.onclick = () => ricresci();
