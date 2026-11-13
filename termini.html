@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radici – Informazioni legali</title>
+<meta name="robots" content="index">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F5F4EE;--surf:#fff;--ink:#23271A;--mute:#6B705C;--line:#E2E2D5;--head:#2E3420;--acc:#8E9A55;--pri:#4F5A2A;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#14160F;--surf:#1E2117;--ink:#EEF0E4;--mute:#AEB39B;--line:#33382A;--head:#E4E9CF;--acc:#B5C27A;--pri:#B5C27A;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 "Hanken Grotesk",system-ui,sans-serif}
+.w{max-width:760px;margin:0 auto;padding:28px 18px 60px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:22px}header img{width:44px;height:44px;border-radius:50%}
+header b{display:block;font:400 1.4rem "Fraunces",serif;color:var(--head)}header span{color:var(--mute);font-size:.85rem;letter-spacing:.12em;text-transform:uppercase}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}nav a{padding:8px 14px;border-radius:999px;border:1.5px solid var(--line);text-decoration:none;color:var(--ink);font-weight:600;font-size:.9rem}
+nav a[aria-current="page"]{background:var(--pri);border-color:var(--pri);color:var(--bg)}
+main{background:var(--surf);border:1px solid var(--line);border-radius:22px;padding:22px 22px 10px}
+h1{font:400 1.8rem "Fraunces",serif;color:var(--head);margin:0 0 14px}
+h3{font:400 1.15rem "Fraunces",serif;color:var(--head);margin:20px 0 6px}h3:first-of-type{margin-top:0}
+p{margin:0 0 9px}p.li{padding-left:16px;position:relative}p.li::before{content:"•";position:absolute;left:2px;color:var(--acc)}
+.bt{display:inline-block;margin:6px 0 14px;padding:12px 20px;border-radius:999px;background:var(--pri);color:var(--bg);font-weight:700;text-decoration:none}
+footer{color:var(--mute);font-size:.82rem;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="w">
+ <header><img id="lg" src="icon-192.png" alt=""><div><b id="nome">Radici</b><span id="sotto">Ambito Hair Studio</span></div></header>
+ <nav><a href="privacy.html" data-p="privacy">Privacy</a><a href="termini.html" data-p="termini">Termini e condizioni</a><a href="cancella-account.html" data-p="cancella">Cancellazione account</a></nav>
+ <main><h1 id="tit"></h1><div id="testo"><p>Caricamento…</p></div></main>
+ <footer>Questa pagina mostra i testi aggiornati che il salone pubblica nella sua app. App realizzata da Eurogestion S.A.S. – servizio Radix Salon.</footer>
+</div>
+<script src="seed.js"></script>
+<script type="module">
+/* Pagine pubbliche (senza accesso) per gli store: leggono gli stessi testi del gestionale (Negozio → Testi legali) */
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const PAG = document.body.dataset.pagina || location.pathname.split('/').pop().replace('.html', '');
+const tipo = PAG.startsWith('cancella') ? 'cancella' : PAG.startsWith('termini') ? 'termini' : 'privacy';
+document.querySelector(`[data-p="${tipo}"]`).setAttribute('aria-current', 'page');
+const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const html = t => t.split('\n').map(r => r.trim()).filter(Boolean).map(r => r.startsWith('## ') ? `<h3>${esc(r.slice(3))}</h3>` : r.startsWith('- ') ? `<p class="li">${esc(r.slice(2))}</p>` : `<p>${esc(r)}</p>`).join('');
+function mostra(C) {
+  document.getElementById('nome').textContent = C.nome || 'Radici';
+  document.getElementById('sotto').textContent = C.sottotitolo || '';
+  if (C.logo) document.getElementById('lg').src = C.logo;
+  const tit = { privacy: 'Informativa privacy', termini: 'Termini e condizioni', cancella: 'Cancellazione dell’account' }[tipo];
+  document.getElementById('tit').textContent = tit; document.title = (C.nome || 'Radici') + ' – ' + tit;
+  if (tipo === 'cancella') {
+    const mail = C.email || '', corpo = 'Chiedo la cancellazione del mio account e dei dati collegati.\n\nEmail con cui sono registrato/a:\nNome e cognome:\n';
+    document.getElementById('testo').innerHTML = html(`Puoi cancellare il tuo account e i dati collegati in due modi.
+## Dall'app
+- Apri l'app di ${C.nome || 'Radici'} ed entra con il tuo account.
+- Vai su Profilo → Cancella profilo e conferma.
+- L'account, i dati del profilo e la foto vengono eliminati subito.
+## Senza l'app
+- Scrivi a ${mail || 'il salone'} dall'indirizzo email con cui sei registrato/a, chiedendo la cancellazione.
+- Il salone elimina l'account entro 30 giorni e ti conferma l'avvenuta cancellazione.
+## Cosa viene cancellato e cosa resta
+- Vengono eliminati: account di accesso, nome, telefono, email, foto del profilo e consensi.
+- Lo storico degli appuntamenti già svolti può essere conservato per il tempo previsto dagli obblighi di legge (fiscali e contabili), poi viene cancellato o reso anonimo.
+- Per maggiori dettagli leggi l'Informativa privacy.`) + (mail ? `<a class="bt" href="mailto:${esc(mail)}?subject=${encodeURIComponent('Richiesta di cancellazione account – ' + (C.nome || 'Radici'))}&body=${encodeURIComponent(corpo)}">Chiedi la cancellazione via email</a>` : '');
+    return;
+  }
+  const t = tipo === 'termini' ? (C.termini || window.RADICI_SEED.termini) : (C.privacy || window.RADICI_SEED.privacy);
+  document.getElementById('testo').innerHTML = html(window.compilaLegale(t, C));
+}
+const base = JSON.parse(JSON.stringify(window.RADICI_SEED));
+try {
+  const db = getFirestore(initializeApp({ apiKey: 'AIzaSyCUhd6pXSheUQ6gPhT5OfvprM5dYI2uxz4', authDomain: 'radici-app.firebaseapp.com', projectId: 'radici-app', storageBucket: 'radici-app.firebasestorage.app', messagingSenderId: '602201707324', appId: '1:602201707324:web:88d8681280de279b81c439' }));
+  const s = await getDoc(doc(db, 'saloni', 'radici'));
+  mostra(Object.assign(base, s.exists() ? s.data() : {}));
+} catch (e) { mostra(base); } /* senza connessione a Firebase mostra il testo standard */
+</script>
+</body>
+</html>

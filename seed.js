@@ -140,6 +140,7 @@ Nome, cognome, email e telefono sono necessari per prenotare: senza non è possi
 ## 5. Come trattiamo i dati e chi li riceve
 I dati sono trattati con strumenti elettronici e misure di sicurezza adeguate. Possono accedervi solo il Titolare e il personale del salone autorizzato.
 Per far funzionare l'app ci serviamo di fornitori che agiscono come responsabili del trattamento:
+- Eurogestion S.A.S. di Di Fiore Rosa (P.IVA 05812141215), che realizza e gestisce l'app e il sito di prenotazione per conto del Titolare (servizio Radix Salon), con accesso ai dati solo per manutenzione e assistenza.
 - Google Ireland Limited (Google Firebase): autenticazione e archiviazione dei dati. Il database si trova in data center dell'Unione Europea.
 - GitHub, Inc.: pubblicazione del sito e dei file dell'app, con registri tecnici di accesso.
 Alcuni fornitori potrebbero trattare dati anche fuori dall'Unione Europea. In questo caso il trasferimento avviene nel rispetto del GDPR, sulla base del Data Privacy Framework UE-USA o delle Clausole Contrattuali Standard approvate dalla Commissione Europea.
