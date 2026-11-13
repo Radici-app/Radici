@@ -7,7 +7,7 @@ const VERSIONE = '1.0';
 const SALONE = 'radici';
 const fbApp = initializeApp({ apiKey: 'AIzaSyCUhd6pXSheUQ6gPhT5OfvprM5dYI2uxz4', authDomain: 'radici-app.firebaseapp.com', projectId: 'radici-app', storageBucket: 'radici-app.firebasestorage.app', messagingSenderId: '602201707324', appId: '1:602201707324:web:88d8681280de279b81c439' });
 const auth = getAuth(fbApp), db = getFirestore(fbApp);
-const colP = collection(db, 'saloni', SALONE, 'prenotazioni'), colB = collection(db, 'saloni', SALONE, 'busy'), colA = collection(db, 'saloni', SALONE, 'avvisi');
+const colP = collection(db, 'saloni', SALONE, 'prenotazioni'), colB = collection(db, 'saloni', SALONE, 'busy'), colA = collection(db, 'saloni', SALONE, 'avvisi'), colG = collection(db, 'saloni', SALONE, 'galleria');
 
 /* ---------- utilità ---------- */
 const $ = id => document.getElementById(id);
@@ -65,7 +65,7 @@ function mostraP(p) {
 }
 function vai(p) { if (p === 'ph') STORIA = ['ph']; else if (STORIA[STORIA.length - 1] !== p) { STORIA.push(p); try { history.pushState({ r: STORIA.length }, ''); } catch (e) {} } mostraP(p); }
 function indietro() { if (STORIA.length > 1) history.back(); else mostraP('ph'); }
-addEventListener('popstate', () => { for (const id of ['login', 'dlg', 'prof']) if (!$(id).hidden) { $(id).hidden = true; return; } if (STORIA.length > 1) { STORIA.pop(); mostraP(STORIA[STORIA.length - 1]); } });
+addEventListener('popstate', () => { if (!$('viewer').hidden) { chiudiFoto(); return; } for (const id of ['login', 'dlg', 'prof']) if (!$(id).hidden) { $(id).hidden = true; return; } if (STORIA.length > 1) { STORIA.pop(); mostraP(STORIA[STORIA.length - 1]); } });
 document.addEventListener('click', e => {
   const g = e.target.closest('[data-go]'); if (g) { const p = g.dataset.go; if (p === 'pm' && !utente) { apriLogin(); return; } if (p === 'ph' || p === 'p1' && PAG === 'p5') STORIA = ['ph']; vai(p); return; }
   if (e.target.closest('[data-back]')) indietro();
@@ -94,6 +94,35 @@ function renderAvvisi() {
   aggAvvisi();
 }
 onSnapshot(colA, s => { AV = s.docs.map(d => d.data()); aggAvvisi(); if (PAG === 'pa') renderAvvisi(); }, () => {});
+
+/* ---------- galleria: miniature scorrevoli, foto grande a schermo intero ---------- */
+let GA = [], galAl = null, galL = [], galI = 0;
+onSnapshot(colG, s => { GA = s.docs.map(d => d.data()); if (PAG === 'pi') renderGalleria(); }, () => {});
+function renderGalleria() {
+  const A = (C.album || []).filter(a => GA.some(f => f.album === a.id));
+  if (!A.length) { $('iGal').innerHTML = ''; return; }
+  if (!galAl || !A.some(a => a.id === galAl)) galAl = A[0].id;
+  galL = GA.filter(f => f.album === galAl).sort((a, b) => (a.ordine || 0) - (b.ordine || 0));
+  $('iGal').innerHTML = (A.length > 1 ? `<div class="galt">${A.map(a => `<button data-ga="${esc(a.id)}" aria-pressed="${a.id === galAl}">${esc(a.nome)}</button>`).join('')}</div>` : '') +
+    `<div class="gals">${galL.map((f, i) => `<button data-gi="${i}" aria-label="Apri foto ${i + 1}"><img src="${f.mini}" alt="" loading="lazy"></button>`).join('')}</div>`;
+  $('iGal').querySelectorAll('[data-ga]').forEach(b => b.onclick = () => { galAl = b.dataset.ga; renderGalleria(); });
+  $('iGal').querySelectorAll('[data-gi]').forEach(b => b.onclick = () => apriFoto(+b.dataset.gi));
+}
+const grandi = {};
+async function mostraFoto() {
+  const f = galL[galI]; if (!f) return;
+  $('vImg').src = f.mini; $('vC').textContent = (galI + 1) + ' / ' + galL.length;
+  $('vP').hidden = galI === 0; $('vS').hidden = galI === galL.length - 1;
+  try { if (!grandi[f.id]) { const d = await getDoc(doc(db, 'saloni', SALONE, 'galleriaFoto', f.id)); if (d.exists()) grandi[f.id] = d.data().img; } if (grandi[f.id] && galL[galI] === f) $('vImg').src = grandi[f.id]; } catch (e) {}
+}
+function apriFoto(i) { galI = i; $('viewer').hidden = false; try { history.pushState({ v: 1 }, ''); } catch (e) {} mostraFoto(); }
+function chiudiFoto() { if ($('viewer').hidden) return; $('viewer').hidden = true; }
+$('vX').onclick = () => history.back();
+$('vP').onclick = () => { if (galI > 0) { galI--; mostraFoto(); } };
+$('vS').onclick = () => { if (galI < galL.length - 1) { galI++; mostraFoto(); } };
+(() => { let x0 = null; $('viewer').addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  $('viewer').addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) (dx < 0 ? $('vS') : $('vP')).click(); }); })();
+document.addEventListener('keydown', e => { if ($('viewer').hidden) return; if (e.key === 'ArrowRight') $('vS').click(); else if (e.key === 'ArrowLeft') $('vP').click(); else if (e.key === 'Escape') history.back(); });
 /* ---------- home e informazioni ---------- */
 function renderTesta() {
   $('bNome').textContent = C.nome; $('bSub').textContent = C.sottotitolo || '';
@@ -134,6 +163,7 @@ function renderInfo() {
   $('iChiuso').innerHTML = ch ? `<div class="row" style="margin-top:14px"><b>Chiuso ${ch.da === ch.a ? dataLunga(ch.da) : 'dal ' + dataLunga(ch.da) + ' al ' + dataLunga(ch.a)}</b>${ch.msg ? `<small>${esc(ch.msg)}</small>` : ''}</div>` : '';
   $('iAddr').innerHTML = C.indirizzo ? `<h3>Indirizzo</h3><p style="margin:0">${esc(C.indirizzo)}</p>` : '';
   $('iDesc').textContent = C.descrizione || '';
+  renderGalleria();
   $('iStaff').innerHTML = C.staff.map(st => `<div class="op">${avatar(st)}<b>${esc(st.nome)}</b></div>`).join('');
   const d = new Date().getDay();
   $('iOrari').innerHTML = ORD.map(g => { const f = C.orari[g] || []; return `<div class="orw${g === d ? ' oggi' : ''}"><b>${GIORNI[g].slice(0, 3).toUpperCase()}</b><span>${f.length ? f.map(x => hm(x[0]) + ' – ' + hm(x[1])).join('&nbsp;&nbsp; ') : 'Chiuso'}</span></div>`; }).join('');
@@ -360,6 +390,7 @@ if (APP) {
   if (!FA) { $('lGoogle').hidden = true; $('lOpp').hidden = true; } // l'accesso con Google dentro l'app richiede la configurazione del nuovo progetto Firebase
   const N = window.Capacitor.Plugins || {};
   if (N.App) N.App.addListener('backButton', () => {
+    if (!$('viewer').hidden) { history.back(); return; }
     for (const id of ['dlg', 'prof', 'login']) if (!$(id).hidden) { if (id === 'dlg') ($('dlgNo').hidden ? $('dlgOk') : $('dlgNo')).click(); else $(id).hidden = true; return; }
     if (PAG !== 'ph') { indietro(); return; }
     N.App.exitApp();

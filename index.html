@@ -198,6 +198,19 @@ input:focus{outline:none;border-color:var(--acc)}
 .legale p{margin:0 0 8px}.legale p.li{padding-left:16px;position:relative}.legale p.li::before{content:"•";position:absolute;left:2px;color:var(--acc)}
 .pmenu .pb{position:relative}.pmenu .mn{position:absolute;top:8px;right:10px;min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:var(--wait);color:#fff;font-size:.72rem;display:grid;place-items:center}.pmenu .mn:empty{display:none}
 .avv b{display:block;font:600 1.15rem "Fraunces",serif;color:var(--head)}.avv p{margin:8px 0 0;white-space:pre-line}.avv.nuovo{border-left:4px solid var(--acc)}
+/* galleria */
+.galt{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:4px 0 8px}
+.galt button{flex:none;padding:6px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--surf);font-weight:600;font-size:.85rem;cursor:pointer}
+.galt button[aria-pressed="true"]{background:var(--pri);border-color:var(--pri);color:var(--onpri)}
+.gals{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 18px;scrollbar-width:none;margin:0 -18px 14px;padding:0 18px}
+.gals::-webkit-scrollbar{display:none}
+.gals button{flex:none;width:62%;max-width:260px;aspect-ratio:4/5;border:0;padding:0;border-radius:22px;overflow:hidden;scroll-snap-align:start;background:var(--soft);cursor:pointer}
+.gals img{width:100%;height:100%;object-fit:cover;display:block}
+#viewer{position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;touch-action:pan-y}
+#viewer img{max-width:100%;max-height:100%;object-fit:contain}
+#viewer button{position:absolute;border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:50%;width:46px;height:46px;font-size:1.6rem;line-height:1;cursor:pointer}
+.vx{top:calc(14px + var(--sat));right:14px;font-size:1.2rem!important}.vp{left:10px}.vs{right:10px}
+#vC{position:absolute;bottom:calc(16px + var(--sab));color:#fff;font-weight:600;font-size:.9rem;opacity:.85}
 .ver{text-align:right;color:var(--mute);font-size:.8rem;margin-top:30px}
 /* Splash screen: radici che crescono, poi il nome */
 #splash{position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(70% 50% at 50% 40%,#9AA65F 0,#6E7A3C 55%,#3F4A20 100%);color:#fff;transition:opacity .5s ease,visibility .5s}
@@ -253,7 +266,7 @@ input:focus{outline:none;border-color:var(--acc)}
   </div>
 
   <div id="pi" class="p" hidden><button class="ind" data-back>‹ Indietro</button>
-   <section class="kv"><h2 id="iNome">Radici</h2>
+   <section class="kv"><div id="iGal"></div><h2 id="iNome">Radici</h2>
     <div class="qa" id="iQa"></div>
     <div id="iChiuso"></div>
     <div id="iAddr"></div>
@@ -337,5 +350,6 @@ input:focus{outline:none;border-color:var(--acc)}
 <script src="seed.js"></script>
 <script src="icone.js"></script>
 <script type="module" src="app.js"></script>
+<div id="viewer" hidden role="dialog" aria-modal="true" aria-label="Foto"><button class="vx" id="vX" aria-label="Chiudi">✕</button><button class="vn vp" id="vP" aria-label="Foto precedente">‹</button><img id="vImg" alt=""><button class="vn vs" id="vS" aria-label="Foto successiva">›</button><span id="vC"></span></div>
 </body>
 </html>
