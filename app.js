@@ -60,7 +60,7 @@ function mostraP(p) {
   if (p === 'p4' && ora == null) p = 'p3';
   document.querySelectorAll('#pagine>.p').forEach(e => e.hidden = e.id !== p);
   PAG = p;
-  ({ ph: renderHome, pi: renderInfo, pl: renderListino, p1: renderServizi, p2: renderOperatori, p3: renderGiorni, p4: renderConferma, pm: renderMie, pp: renderProfilo })[p]?.();
+  ({ ph: renderHome, pi: renderInfo, pl: renderListino, p1: renderServizi, p2: renderOperatori, p3: renderGiorni, p4: renderConferma, pm: renderMie, pp: renderProfilo, pv: aggLegali, pt: aggLegali })[p]?.();
   aggBarra(); scrollTo(0, 0);
 }
 function vai(p) { if (p === 'ph') STORIA = ['ph']; else if (STORIA[STORIA.length - 1] !== p) { STORIA.push(p); try { history.pushState({ r: STORIA.length }, ''); } catch (e) {} } mostraP(p); }
@@ -256,13 +256,19 @@ $('mFut').onclick = () => { storico = false; renderMie(); };
 $('mSto').onclick = () => { storico = true; renderMie(); };
 
 /* ---------- profilo ---------- */
+/* Testi legali: segnaposto riempiti con i dati del negozio, righe '## ' come titoli, '- ' come elenchi */
+function testoLegale(t) {
+  return window.compilaLegale(t, C).split('\n').map(r => r.trim()).filter(Boolean).map(r =>
+    r.startsWith('## ') ? `<h3>${esc(r.slice(3))}</h3>` : r.startsWith('- ') ? `<p class="li">${esc(r.slice(2))}</p>` : `<p>${esc(r)}</p>`).join('');
+}
+const aggLegali = () => { $('tPriv').innerHTML = testoLegale(C.privacy || window.RADICI_SEED.privacy); $('tTerm').innerHTML = testoLegale(C.termini || window.RADICI_SEED.termini); };
 function renderProfilo() {
   ['pMod', 'pDel', 'pOut'].forEach(id => $(id).hidden = !utente); $('pIn').hidden = !!utente; $('pBenv').hidden = !!utente; document.querySelector('.pfoto').style.pointerEvents = utente ? '' : 'none'; document.querySelector('.pfoto .cam').hidden = !utente;
   const n = PROF && (PROF.nome || PROF.cogn) ? (PROF.nome + ' ' + PROF.cogn).trim() : (utente && utente.displayName) || (utente ? 'Cliente' : 'Benvenuto');
   const foto = (PROF && PROF.foto) || (utente && utente.photoURL) || '';
   $('pAv').innerHTML = foto ? `<img src="${esc(foto)}" alt="" referrerpolicy="no-referrer">` : esc(iniziali(n)); $('pNome').textContent = n; $('pMail').textContent = utente ? utente.email || '' : ''; $('pVer').textContent = VERSIONE;
   if (!utente) $('pAv').innerHTML = C.logo ? `<img src="${esc(C.logo)}" alt="">` : esc(iniziali(C.nome)[0]);
-  if (C.privacy) $('tPriv').textContent = C.privacy; if (C.termini) $('tTerm').textContent = C.termini;
+  $('tPriv').innerHTML = testoLegale(C.privacy || window.RADICI_SEED.privacy); $('tTerm').innerHTML = testoLegale(C.termini || window.RADICI_SEED.termini);
 }
 /* foto del profilo: rimpicciolita sul telefono e salvata con i dati del cliente */
 function riduci(file, lato) { return new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { const s = Math.min(1, lato / Math.min(im.width, im.height)), c = document.createElement('canvas'), w = Math.round(im.width * s), h = Math.round(im.height * s), q = Math.min(w, h); c.width = c.height = q; c.getContext('2d').drawImage(im, (q - w) / 2, (q - h) / 2, w, h); ok(c.toDataURL('image/jpeg', .82)); }; im.onerror = ko; im.src = r.result; }; r.onerror = ko; r.readAsDataURL(file); }); }

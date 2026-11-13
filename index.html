@@ -190,6 +190,9 @@ input:focus{outline:none;border-color:var(--acc)}
 .consenso a{color:var(--pri);font-weight:700}
 .consenso.scuoti{animation:scuoti .4s}
 @keyframes scuoti{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.legale{line-height:1.55;font-size:.95rem}
+.legale h3{font-size:1.15rem;margin:18px 0 6px;color:var(--head)}.legale h3:first-child{margin-top:0;font-size:1.35rem}
+.legale p{margin:0 0 8px}.legale p.li{padding-left:16px;position:relative}.legale p.li::before{content:"•";position:absolute;left:2px;color:var(--acc)}
 .ver{text-align:right;color:var(--mute);font-size:.8rem;margin-top:30px}
 /* Splash screen: radici che crescono, poi il nome */
 #splash{position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(70% 50% at 50% 40%,#9AA65F 0,#6E7A3C 55%,#3F4A20 100%);color:#fff;transition:opacity .5s ease,visibility .5s}
@@ -295,8 +298,8 @@ input:focus{outline:none;border-color:var(--acc)}
    </div>
    <p class="ver">versione <span id="pVer">1.0</span></p></section></div>
 
-  <div id="pv" class="p" hidden><button class="ind" data-back>‹ Indietro</button><section><h2>Privacy</h2><div class="row" id="tPriv">Informativa sulla privacy in preparazione.</div></section></div>
-  <div id="pt" class="p" hidden><button class="ind" data-back>‹ Indietro</button><section><h2>Termini e condizioni</h2><div class="row" id="tTerm">Termini e condizioni in preparazione.</div></section></div>
+  <div id="pv" class="p" hidden><button class="ind" data-back>‹ Indietro</button><section><h2>Privacy</h2><div class="row legale" id="tPriv"></div></section></div>
+  <div id="pt" class="p" hidden><button class="ind" data-back>‹ Indietro</button><section><h2>Termini e condizioni</h2><div class="row legale" id="tTerm"></div></section></div>
  </main>
 </div>
 

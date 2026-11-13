@@ -110,3 +110,123 @@ window.fasceVersoDb = c => {
   if (o.eccezioni) o.eccezioni.forEach(e => { e.fasce = f(e.fasce); });
   return o;
 };
+
+/* Testi legali standard. I segnaposto tra {{ }} si riempiono da soli con i dati del negozio e le regole di prenotazione. */
+window.RADICI_SEED.privacy = `## Informativa sul trattamento dei dati personali
+Ai sensi degli articoli 13 e 14 del Regolamento (UE) 2016/679 ("GDPR") e del D.Lgs. 196/2003, come modificato dal D.Lgs. 101/2018, ti spieghiamo come trattiamo i tuoi dati quando usi l'app e il sito di prenotazione di {{nome}}.
+
+## 1. Titolare del trattamento
+{{ragione}}, con sede in {{indirizzo}}, P.IVA {{piva}}.
+Email: {{email}} – Telefono: {{telefono}}.
+
+## 2. Quali dati trattiamo
+- Dati dell'account: nome, cognome, indirizzo email, numero di telefono e, se scegli di caricarla, la foto del profilo.
+- Se accedi con Google: nome, email e immagine del profilo che Google ci comunica con il tuo consenso.
+- Dati delle prenotazioni: servizi scelti, operatore, data, ora, durata, prezzo indicativo, eventuali note che scrivi e lo stato della prenotazione (confermata o annullata).
+- Data e ora in cui hai accettato i Termini e questa Informativa.
+- Dati tecnici strettamente necessari al funzionamento (identificativo dell'account, dati di accesso, indirizzo IP nei registri di sicurezza dei fornitori).
+Non trattiamo dati sanitari o altre categorie particolari di dati. Ti chiediamo di non inserirli nelle note.
+
+## 3. Perché li trattiamo e su quale base giuridica
+a) Creare e gestire il tuo account e le tue prenotazioni, mostrarti gli orari disponibili, ricordarti gli appuntamenti e contattarti in caso di modifiche o annullamenti. Base giuridica: esecuzione del servizio richiesto (art. 6.1.b GDPR).
+b) Adempiere agli obblighi di legge, ad esempio fiscali e contabili. Base giuridica: obbligo legale (art. 6.1.c GDPR).
+c) Garantire la sicurezza dell'app, prevenire abusi e tutelare i diritti del Titolare. Base giuridica: legittimo interesse (art. 6.1.f GDPR).
+d) Conservare la prova dell'accettazione dei Termini e dell'Informativa. Base giuridica: legittimo interesse e obbligo di responsabilizzazione (art. 5.2 GDPR).
+I tuoi dati non sono usati per pubblicità, non sono venduti e non sono oggetto di profilazione o di decisioni automatizzate.
+
+## 4. Conferimento dei dati
+Nome, cognome, email e telefono sono necessari per prenotare: senza non è possibile fornire il servizio. La foto del profilo e le note sono facoltative.
+
+## 5. Come trattiamo i dati e chi li riceve
+I dati sono trattati con strumenti elettronici e misure di sicurezza adeguate. Possono accedervi solo il Titolare e il personale del salone autorizzato.
+Per far funzionare l'app ci serviamo di fornitori che agiscono come responsabili del trattamento:
+- Google Ireland Limited (Google Firebase): autenticazione e archiviazione dei dati. Il database si trova in data center dell'Unione Europea.
+- GitHub, Inc.: pubblicazione del sito e dei file dell'app, con registri tecnici di accesso.
+Alcuni fornitori potrebbero trattare dati anche fuori dall'Unione Europea. In questo caso il trasferimento avviene nel rispetto del GDPR, sulla base del Data Privacy Framework UE-USA o delle Clausole Contrattuali Standard approvate dalla Commissione Europea.
+I dati non sono diffusi. Possono essere comunicati alle autorità solo se richiesto dalla legge.
+
+## 6. Per quanto tempo li conserviamo
+- Dati dell'account: finché l'account resta attivo. Se cancelli il profilo, i dati dell'account e la foto vengono eliminati.
+- Prenotazioni: per il tempo necessario a gestirle e, per lo storico, per un massimo di 24 mesi dall'appuntamento.
+- Prova del consenso a Termini e Informativa: per la durata dell'account e fino a 24 mesi dopo la sua cancellazione.
+- Dati necessari agli obblighi fiscali: per il tempo previsto dalla legge (fino a 10 anni).
+
+## 7. I tuoi diritti
+Puoi chiedere in qualsiasi momento di accedere ai tuoi dati, correggerli, cancellarli, limitarne il trattamento, riceverli in un formato leggibile (portabilità) e opporti al trattamento basato sul legittimo interesse (articoli 15–22 GDPR).
+Puoi modificare i tuoi dati dalla sezione Profilo dell'app e cancellare l'account con "Cancella profilo". Per le altre richieste scrivi a {{email}}.
+Se ritieni che il trattamento violi il GDPR puoi presentare reclamo al Garante per la protezione dei dati personali (www.garanteprivacy.it).
+
+## 8. Minori
+Il servizio è riservato a chi ha compiuto 14 anni. Per i minori di 14 anni la prenotazione deve essere fatta da un genitore o da chi ne esercita la responsabilità.
+
+## 9. Cookie e memoria del dispositivo
+L'app e il sito non usano cookie di profilazione né strumenti pubblicitari. Usano solo la memoria del dispositivo per ragioni tecniche: mantenere l'accesso, ricordare le tue preferenze e far funzionare l'app anche senza connessione. Per questi strumenti tecnici non è richiesto il consenso.
+
+## 10. Notifiche
+Se le autorizzi, l'app ti invia promemoria sugli appuntamenti. Puoi disattivarle in qualsiasi momento dalle impostazioni del telefono.
+
+## 11. Modifiche
+Questa Informativa può essere aggiornata. La versione in vigore è sempre disponibile nell'app, nella sezione Profilo.`;
+
+window.RADICI_SEED.termini = `## Termini e condizioni d'uso
+Questi Termini regolano l'uso dell'app e del sito di prenotazione di {{nome}}, gestiti da {{ragione}}, con sede in {{indirizzo}}, P.IVA {{piva}} (di seguito "il Salone"). Registrandoti e usando il servizio dichiari di averli letti e di accettarli.
+
+## 1. Il servizio
+L'app permette di consultare i servizi e il listino, vedere gli orari disponibili, prenotare, consultare e annullare i propri appuntamenti. Il servizio è gratuito. L'app non gestisce pagamenti: i servizi si pagano direttamente in salone.
+
+## 2. Account
+- Per prenotare serve un account personale, creato con email e password o con Google.
+- Ti impegni a fornire dati veri e aggiornati, in particolare nome e numero di telefono, che il Salone usa per contattarti.
+- L'account è personale: sei responsabile della custodia delle tue credenziali e delle prenotazioni fatte con il tuo account.
+- Il servizio è riservato a chi ha almeno 14 anni. Per i minori la prenotazione va fatta da un genitore.
+
+## 3. Prenotazioni
+- Puoi prenotare fino a {{giorniMax}} giorni prima e fino a {{anticipo}} prima dell'orario scelto.
+- Puoi avere al massimo {{maxAttive}} prenotazioni in programma contemporaneamente e scegliere fino a {{maxServizi}} servizi per prenotazione.
+- Alcuni servizi si possono prenotare solo insieme ad altri: l'app lo indica al momento della scelta.
+- La prenotazione è confermata quando compare nella sezione "Prenotazioni" dell'app.
+
+## 4. Durate e prezzi
+Durate e prezzi indicati nell'app sono quelli del listino in vigore e hanno valore indicativo. Per i servizi con prezzo "a partire da" o variabile (ad esempio in base alla lunghezza dei capelli o delle unghie, o ai prodotti usati), il prezzo finale viene definito in salone prima di eseguire il servizio. Il Salone può aggiornare listino e servizi in qualsiasi momento; le modifiche non riguardano gli appuntamenti già confermati, salvo diverso accordo.
+
+## 5. Annullamenti e modifiche da parte del cliente
+- Puoi annullare una prenotazione direttamente dall'app fino a {{annullo}} prima dell'appuntamento.
+- Dopo questo termine l'annullamento va comunicato al Salone per telefono o messaggio, il prima possibile.
+- Per spostare un appuntamento annullalo e prenotane uno nuovo, oppure contatta il Salone.
+
+## 6. Ritardi e mancata presentazione
+- In caso di ritardo il Salone potrebbe dover ridurre il servizio o spostare l'appuntamento, per non danneggiare i clienti successivi.
+- Se non ti presenti senza avvisare, il Salone può limitare o sospendere la possibilità di prenotare online. In caso di mancate presentazioni ripetute può disattivare l'account.
+
+## 7. Modifiche e annullamenti da parte del Salone
+Il Salone può spostare o annullare un appuntamento per cause organizzative, assenza dell'operatore, chiusure straordinarie o cause di forza maggiore. In questi casi ti avvisa appena possibile, ai recapiti che hai indicato, e ti propone una nuova data. Non sono previsti indennizzi.
+
+## 8. Comportamento corretto
+Non è consentito fare prenotazioni false o di prova, prenotare a nome di altri senza il loro consenso, usare l'app in modo da danneggiarne il funzionamento o tentare di accedere ai dati di altri utenti. In questi casi il Salone può annullare le prenotazioni e sospendere l'account.
+
+## 9. Disponibilità dell'app
+Il Salone si impegna a mantenere l'app funzionante, ma non può garantire che sia sempre disponibile e senza errori: possono esserci interruzioni per manutenzione, aggiornamenti o problemi dei fornitori tecnici. In caso di problemi puoi sempre prenotare contattando direttamente il Salone.
+
+## 10. Responsabilità
+Il Salone risponde dei servizi eseguiti in salone secondo la legge. Non risponde dei danni dovuti a uso scorretto dell'app, a dati inseriti in modo errato dal cliente o a malfunzionamenti di reti e dispositivi non sotto il suo controllo, nei limiti consentiti dalla legge. Restano salvi i diritti del consumatore previsti dal Codice del Consumo (D.Lgs. 206/2005).
+
+## 11. Contenuti
+Nomi, marchi, logo, testi e immagini presenti nell'app appartengono al Salone o ai rispettivi titolari e non possono essere usati senza autorizzazione. La foto del profilo che carichi resta tua: la usiamo solo per mostrarla nel tuo profilo e al personale del Salone.
+
+## 12. Cancellazione dell'account
+Puoi cancellare il tuo account in qualsiasi momento con "Cancella profilo". Le prenotazioni in programma vengono annullate e i tuoi dati trattati come indicato nell'Informativa privacy.
+
+## 13. Modifiche ai Termini
+Il Salone può aggiornare questi Termini. Le modifiche importanti ti verranno segnalate nell'app. Continuando a usare il servizio dopo l'aggiornamento le accetti.
+
+## 14. Legge applicabile e contatti
+Questi Termini sono regolati dalla legge italiana. Per le controversie con i consumatori è competente il foro del luogo di residenza o domicilio del consumatore. Per qualsiasi richiesta: {{email}} – {{telefono}}.`;
+
+/* Riempie i segnaposto con i dati del negozio; quelli mancanti restano evidenti */
+window.compilaLegale = (testo, c) => {
+  const R = c.regole || {}, mancante = '[da completare]';
+  const durata = m => !m ? 'il momento stesso' : m % 1440 === 0 ? (m / 1440) + (m === 1440 ? ' giorno' : ' giorni') : m % 60 === 0 ? (m / 60) + (m === 60 ? ' ora' : ' ore') : m + ' minuti';
+  const v = { nome: c.nome, ragione: c.ragioneSociale, piva: c.piva, indirizzo: c.indirizzo, email: c.email, telefono: c.telefono,
+    giorniMax: R.giorniMax, maxAttive: R.maxAttive, maxServizi: R.maxServizi, annullo: durata(R.annulloMin), anticipo: durata(R.anticipoMin) };
+  return String(testo || '').replace(/\{\{(\w+)\}\}/g, (_, k) => (v[k] !== undefined && v[k] !== '' && v[k] !== null) ? String(v[k]) : mancante);
+};
