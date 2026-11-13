@@ -228,7 +228,8 @@ input:focus{outline:none;border-color:var(--acc)}
 .marchio.vivo .linfa{animation:mLinfa 3.6s ease-in-out infinite;animation-delay:var(--l)}
 .marchio.vivo .ondeggia{animation:mOnda 7s ease-in-out infinite alternate;animation-delay:var(--o)}
 .marchio.go text{animation:mSu 1s ease-out both}
-.marchio.go .rd{stroke-dasharray:1;stroke-dashoffset:1;animation:mCresci .9s ease-out both;animation-delay:var(--r)}
+.marchio.go .rd,.marchio.ricresci .rd{stroke-dasharray:1;stroke-dashoffset:1;animation:mCresci .9s ease-out both;animation-delay:var(--r)}
+.albero .marchio{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .marchio.go .msub{opacity:0;animation:mSu .8s ease-out 1.9s forwards}
 @keyframes mSu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes mCresci{0%{stroke-dashoffset:1;opacity:0}1%{opacity:1}100%{stroke-dashoffset:0;opacity:1}}
@@ -280,6 +281,8 @@ window.radiciMarchio = function (el, sotto, anima) {
   /* le radici partono dalle lettere: aspetto il carattere giusto (al massimo 1,2 secondi) */
   if (document.fonts && document.fonts.load) { document.fonts.load('84px Fraunces').then(radici, radici); setTimeout(radici, 1200); } else radici();
 };
+/* Fa ricrescere le radici di un marchio già disegnato (la scritta resta ferma) */
+window.ricresciRadici = function (el) { if (!el || !el.classList.contains('vivo')) return; el.classList.remove('go', 'ricresci'); void el.offsetWidth; el.classList.add('ricresci'); };
 /* Splash: resta almeno 3,2 secondi (il tempo di veder crescere le radici), si chiude quando i dati sono pronti (al massimo dopo 6) */
 (function(){var s=document.getElementById('splash'),t0=Date.now(),fatto=false;
  try{if(sessionStorage.getItem('radiciSplash')==='1'){s.remove();window.splashPronto=function(){};return;}}catch(e){}

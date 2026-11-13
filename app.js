@@ -172,7 +172,13 @@ function disegnaAlbero() {
   el.style.height = H + 'px';
   el.innerHTML = '<div class="marchio"></div>';
   window.radiciMarchio(el.firstChild, sotto, !alberoFatto && !document.getElementById('splash')); alberoFatto = true;
+  el.firstChild.onclick = () => ricresci();
 }
+/* ogni tanto le radici ricrescono da sole (ogni 40 secondi circa, solo con la home in vista); toccando la scritta ricrescono subito */
+let ultimaCrescita = Date.now();
+function ricresci() { const m = $('albero') && $('albero').firstChild; if (!m || matchMedia('(prefers-reduced-motion: reduce)').matches) return; window.ricresciRadici(m); ultimaCrescita = Date.now(); }
+setInterval(() => { if (PAG === 'ph' && !document.hidden && $('viewer').hidden && !document.getElementById('splash') && Date.now() - ultimaCrescita > 40000) ricresci(); }, 5000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && PAG === 'ph' && Date.now() - ultimaCrescita > 20000) setTimeout(ricresci, 400); });
 function renderHome() {
   renderTesta();
   $('cover').querySelector('img')?.remove();
