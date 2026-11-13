@@ -49,13 +49,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offse
 .cover{position:relative;margin:14px 0 0;height:190px;border-radius:30px;overflow:hidden;background:linear-gradient(135deg,var(--acc),var(--pri))}
 /* Testi dei riquadri: si adattano alla larghezza, anche con il carattere del telefono ingrandito */
 #ph .menu{container-type:inline-size}
-.albero{margin:6px 0 -110px;pointer-events:none}.albero svg{display:block;width:100%;height:100%;overflow:visible}
-.albero .cr{stroke:var(--tronco);fill:none;stroke-linecap:round}.albero .rd{stroke:var(--tronco);fill:none;stroke-linecap:round}
-.albero .ve{fill:none;stroke:var(--bg);stroke-width:1;opacity:.3;stroke-linecap:round}.albero .te{stroke:var(--line);stroke-width:1.5}
-.albero.anim .cr,.albero.anim .rd{stroke-dasharray:1;stroke-dashoffset:1;animation:cresci .7s ease-out forwards;animation-delay:var(--r)}
-.albero.anim .tr,.albero.anim .ve{transform-box:view-box;transform-origin:50% 50%;opacity:0;animation:sali .7s ease-out forwards}
-@keyframes cresci{to{stroke-dashoffset:0}}@keyframes sali{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.albero.anim .ve{animation-name:sali2}@keyframes sali2{to{opacity:.3}}
-@media(prefers-reduced-motion:reduce){.albero.anim *{animation:none!important;stroke-dashoffset:0!important;transform:none!important}}
+.albero{margin:6px 0 -110px}.albero .marchio{height:100%}
 #ph .mt.big b{font-size:clamp(1rem,6.4cqi,1.35rem);-webkit-hyphens:manual;hyphens:manual;max-width:100%}
 #ph .mt.sm b{font-size:clamp(.72rem,3.4cqi,.85rem);max-width:100%}
 .cover img{width:100%;height:100%;object-fit:cover;display:block}
@@ -224,37 +218,76 @@ input:focus{outline:none;border-color:var(--acc)}
 .vx{top:calc(14px + var(--sat));right:14px;font-size:1.2rem!important}.vp{left:10px}.vs{right:10px}
 #vC{position:absolute;bottom:calc(16px + var(--sab));color:#fff;font-weight:600;font-size:.9rem;opacity:.85}
 .ver{text-align:right;color:var(--mute);font-size:.8rem;margin-top:30px}
-/* Splash screen: radici che crescono, poi il nome */
-#splash{position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(70% 50% at 50% 40%,#9AA65F 0,#6E7A3C 55%,#3F4A20 100%);color:#fff;transition:opacity .5s ease,visibility .5s}
+/* Marchio "Radici": la scritta con le radici che crescono dalle lettere (splash e home) */
+.marchio{display:flex;flex-direction:column;align-items:center;justify-content:center;--m-testo:var(--head);--m-rad:var(--acc);--m-linfa:var(--gold);--m-sub:var(--mute)}
+.marchio svg{width:100%;max-width:340px;overflow:visible;flex:1 1 auto;min-height:0}
+.marchio text{font:400 84px "Fraunces",Georgia,serif;fill:var(--m-testo)}
+.marchio .rd{fill:none;stroke:var(--m-rad);stroke-linecap:round}
+.marchio .linfa{fill:none;stroke:var(--m-linfa);stroke-linecap:round;stroke-dasharray:.07 1;stroke-dashoffset:.07;opacity:0}
+.marchio .msub{color:var(--m-sub);letter-spacing:.22em;font-size:.78rem;font-weight:600;text-transform:uppercase;margin-top:4px;text-align:center}
+.marchio.vivo .linfa{animation:mLinfa 3.6s ease-in-out infinite;animation-delay:var(--l)}
+.marchio.vivo .ondeggia{animation:mOnda 7s ease-in-out infinite alternate;animation-delay:var(--o)}
+.marchio.go text{animation:mSu 1s ease-out both}
+.marchio.go .rd{stroke-dasharray:1;stroke-dashoffset:1;animation:mCresci .9s ease-out both;animation-delay:var(--r)}
+.marchio.go .msub{opacity:0;animation:mSu .8s ease-out 1.9s forwards}
+@keyframes mSu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes mCresci{0%{stroke-dashoffset:1;opacity:0}1%{opacity:1}100%{stroke-dashoffset:0;opacity:1}}
+@keyframes mLinfa{0%{stroke-dashoffset:.07;opacity:0}10%{opacity:.9}80%{opacity:.9}100%{stroke-dashoffset:-1;opacity:0}}
+@keyframes mOnda{from{transform:rotate(-1.6deg)}to{transform:rotate(1.6deg)}}
+@media(prefers-reduced-motion:reduce){.marchio *{animation:none!important;stroke-dashoffset:0!important}.marchio .linfa{display:none}.marchio .msub{opacity:1!important}}
+/* Splash screen: il marchio su fondo scuro */
+#splash{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(70% 50% at 50% 42%,#262B1B 0,#14160F 75%);transition:opacity .5s ease,visibility .5s}
 #splash.via{opacity:0;visibility:hidden;pointer-events:none}
-#splash .seme{width:116px;height:116px;border-radius:50%;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.55);display:grid;place-items:center;font:600 3.4rem/1 "Fraunces",Georgia,serif;overflow:hidden;transform:scale(.6);opacity:0;animation:spPop .7s .1s cubic-bezier(.2,1.4,.4,1) forwards}
-#splash .seme img{width:100%;height:100%;object-fit:cover}
-#splash svg{width:180px;height:70px;margin-top:-6px;overflow:visible}
-#splash svg path{fill:none;stroke:rgba(255,255,255,.7);stroke-width:2;stroke-linecap:round;stroke-dasharray:120;stroke-dashoffset:120;animation:spRad 1.1s .5s ease forwards}
-#splash svg path:nth-child(2){animation-delay:.62s}#splash svg path:nth-child(3){animation-delay:.74s}#splash svg path:nth-child(4){animation-delay:.86s}#splash svg path:nth-child(5){animation-delay:.98s}
-#splash .nm{font:400 clamp(2.6rem,12vw,3.6rem)/1 "Fraunces",Georgia,serif;letter-spacing:-.02em;opacity:0;animation:spSu .7s 1s ease forwards}
-#splash .sb{font-size:.8rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#E9DDB8;opacity:0;animation:spSu .7s 1.2s ease forwards}
-@keyframes spPop{to{transform:none;opacity:1}}
-@keyframes spRad{to{stroke-dashoffset:0}}
-@keyframes spSu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion:reduce){#splash *{animation-duration:.01s!important;animation-delay:0s!important}}
+#splash .marchio{width:min(86vw,360px);height:min(70vh,420px);--m-testo:#E4E9CF;--m-rad:#B5C27A;--m-linfa:#D6B67E;--m-sub:#AEB39B}
 </style>
 </head>
 <body>
 <div id="splash" role="status" aria-label="Caricamento">
- <div class="seme" id="spLogo">R</div>
- <svg viewBox="0 0 180 70" aria-hidden="true"><path d="M90 0v60"/><path d="M90 10c-6 14-22 22-40 30"/><path d="M90 10c6 14 22 22 40 30"/><path d="M90 22c-10 16-30 26-62 34"/><path d="M90 22c10 16 30 26 62 34"/></svg>
- <div class="nm" id="spNome">Radici</div>
- <div class="sb" id="spSub">Ambito Hair Studio</div>
+ <div class="marchio" id="spMarchio"></div>
 </div>
 <script>
-/* Splash: resta almeno 2 secondi, si chiude quando i dati sono pronti (al massimo dopo 6) */
+/* Marchio "Radici": scrive la parola e fa crescere le radici dal piede delle lettere R, d, i, i.
+   Sempre uguale (seme fisso). anima=true: la scritta compare e le radici crescono; dopo restano vive (ondeggiano, scende la linfa). */
+window.radiciMarchio = function (el, sotto, anima) {
+  el.innerHTML = '<svg viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><text x="150" y="82" text-anchor="middle">Radici</text><g></g></svg><div class="msub"></div>';
+  el.querySelector('.msub').textContent = sotto || '';
+  el.setAttribute('aria-label', 'Radici' + (sotto ? ' – ' + sotto : ''));
+  el.classList.remove('go', 'vivo');
+  var svg = el.querySelector('svg'), t = svg.querySelector('text'), fatto = false;
+  if (anima) el.classList.add('go');
+  function radici() {
+    if (fatto || !el.isConnected) return; fatto = true;
+    var seme = 11, rnd = function () { seme = (seme * 16807) % 2147483647; return (seme - 1) / 2147483646; };
+    var f = function (n) { return Math.round(n * 10) / 10; }, html = '', g = '';
+    var punti = [[0, .22], [2, .8], [3, .5], [5, .5]].map(function (p) { var e; try { e = t.getExtentOfChar(p[0]); } catch (x) { e = { x: 45 + p[0] * 36, width: 34 }; } return [e.x + e.width * p[1], 82]; });
+    function ramo(x, y, ang, len, w, d, rit, idx) {
+      var x2 = x + Math.cos(ang) * len, y2 = Math.min(292, y + Math.sin(ang) * len);
+      var d0 = 'M' + f(x) + ' ' + f(y) + 'C' + f(x + Math.cos(ang) * len * .35 + (rnd() - .5) * 10) + ' ' + f(y + len * .3) + ' ' + f(x2 + (rnd() - .5) * 12) + ' ' + f(y2 - len * .35) + ' ' + f(x2) + ' ' + f(y2);
+      html += '<path class="rd" pathLength="1" style="--r:' + f(rit) + 's" stroke-width="' + f(w) + '" d="' + d0 + '"/>';
+      if (d === 3) html += '<path class="linfa" pathLength="1" style="--l:' + f(2.2 + idx * .7 + rnd()) + 's" stroke-width="' + f(w + .6) + '" d="' + d0 + '"/>';
+      if (!d || y2 > 280) return;
+      var n = d === 3 ? 2 : 1;
+      for (var i = 0; i < n; i++) { var a = ang + (n === 2 ? (i ? 1 : -1) : (x2 < 150 ? -1 : 1)) * (.3 + rnd() * .25); ramo(x2, y2, Math.max(.6, Math.min(Math.PI - .6, a)), len * (.62 + rnd() * .15), Math.max(.6, w * .65), d - 1, rit + .35, idx); }
+    }
+    punti.forEach(function (p, i) {
+      html = ''; var lato = (p[0] - 150) / 150;
+      ramo(p[0], p[1] + 1, Math.PI / 2 + lato * .55, [70, 95, 88, 66][i], 1.9, 3, (anima ? .5 : 0) + i * .15, i);
+      g += '<g class="ondeggia" style="transform-origin:' + f(p[0]) + 'px ' + p[1] + 'px;transform-box:view-box;--o:' + f(-rnd() * 7) + 's">' + html + '</g>';
+    });
+    svg.querySelector('g').innerHTML = g;
+    el.classList.add('vivo');
+  }
+  /* le radici partono dalle lettere: aspetto il carattere giusto (al massimo 1,2 secondi) */
+  if (document.fonts && document.fonts.load) { document.fonts.load('84px Fraunces').then(radici, radici); setTimeout(radici, 1200); } else radici();
+};
+/* Splash: resta almeno 3,2 secondi (il tempo di veder crescere le radici), si chiude quando i dati sono pronti (al massimo dopo 6) */
 (function(){var s=document.getElementById('splash'),t0=Date.now(),fatto=false;
  try{if(sessionStorage.getItem('radiciSplash')==='1'){s.remove();window.splashPronto=function(){};return;}}catch(e){}
  var S=window.RADICI_SEED;
+ window.radiciMarchio(document.getElementById('spMarchio'),'Ambito Hair Studio',true);
  function chiudi(){if(fatto)return;fatto=true;s.classList.add('via');try{sessionStorage.setItem('radiciSplash','1');}catch(e){}setTimeout(function(){s.remove();},600);}
- window.splashDati=function(c){if(fatto||!c)return;if(c.nome)document.getElementById('spNome').textContent=c.nome;if(c.sottotitolo!=null)document.getElementById('spSub').textContent=c.sottotitolo;if(c.logo)document.getElementById('spLogo').innerHTML='<img src="'+String(c.logo).replace(/"/g,'')+'" alt="">';};
- window.splashPronto=function(){setTimeout(chiudi,Math.max(0,2000-(Date.now()-t0)));};
+ window.splashDati=function(c){if(fatto||!c)return;if(c.sottotitolo!=null){var m=document.querySelector('#spMarchio .msub');if(m)m.textContent=c.sottotitolo;}};
+ window.splashPronto=function(){setTimeout(chiudi,Math.max(0,3200-(Date.now()-t0)));};
  setTimeout(chiudi,6000);})();
 </script>
 <div class="wrap" id="app">
