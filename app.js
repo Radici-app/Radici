@@ -67,7 +67,7 @@ function vai(p) { if (p === 'ph') STORIA = ['ph']; else if (STORIA[STORIA.length
 function indietro() { if (STORIA.length > 1) history.back(); else mostraP('ph'); }
 addEventListener('popstate', () => { for (const id of ['login', 'dlg', 'prof']) if (!$(id).hidden) { $(id).hidden = true; return; } if (STORIA.length > 1) { STORIA.pop(); mostraP(STORIA[STORIA.length - 1]); } });
 document.addEventListener('click', e => {
-  const g = e.target.closest('[data-go]'); if (g) { const p = g.dataset.go; if ((p === 'pm' || p === 'pp') && !utente) { apriLogin(); return; } if (p === 'ph' || p === 'p1' && PAG === 'p5') STORIA = ['ph']; vai(p); return; }
+  const g = e.target.closest('[data-go]'); if (g) { const p = g.dataset.go; if (p === 'pm' && !utente) { apriLogin(); return; } if (p === 'ph' || p === 'p1' && PAG === 'p5') STORIA = ['ph']; vai(p); return; }
   if (e.target.closest('[data-back]')) indietro();
 });
 function ridisegna() { mostraP(PAG); }
@@ -257,9 +257,11 @@ $('mSto').onclick = () => { storico = true; renderMie(); };
 
 /* ---------- profilo ---------- */
 function renderProfilo() {
-  const n = PROF && (PROF.nome || PROF.cogn) ? (PROF.nome + ' ' + PROF.cogn).trim() : (utente && utente.displayName) || 'Ospite';
+  ['pMod', 'pDel', 'pOut'].forEach(id => $(id).hidden = !utente); $('pIn').hidden = !!utente; $('pBenv').hidden = !!utente; document.querySelector('.pfoto').style.pointerEvents = utente ? '' : 'none'; document.querySelector('.pfoto .cam').hidden = !utente;
+  const n = PROF && (PROF.nome || PROF.cogn) ? (PROF.nome + ' ' + PROF.cogn).trim() : (utente && utente.displayName) || (utente ? 'Cliente' : 'Benvenuto');
   const foto = (PROF && PROF.foto) || (utente && utente.photoURL) || '';
   $('pAv').innerHTML = foto ? `<img src="${esc(foto)}" alt="" referrerpolicy="no-referrer">` : esc(iniziali(n)); $('pNome').textContent = n; $('pMail').textContent = utente ? utente.email || '' : ''; $('pVer').textContent = VERSIONE;
+  if (!utente) $('pAv').innerHTML = C.logo ? `<img src="${esc(C.logo)}" alt="">` : esc(iniziali(C.nome)[0]);
   if (C.privacy) $('tPriv').textContent = C.privacy; if (C.termini) $('tTerm').textContent = C.termini;
 }
 /* foto del profilo: rimpicciolita sul telefono e salvata con i dati del cliente */
@@ -280,6 +282,7 @@ $('eOk').onclick = async () => {
   try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), d, { merge: true }); PROF = d; $('prof').hidden = true; renderProfilo(); toast('Dati salvati'); }
   catch (x) { $('eErr').textContent = 'Salvataggio non riuscito. Riprova.'; }
 };
+$('pIn').onclick = () => apriLogin();
 $('pOut').onclick = () => signOut(auth).then(() => { STORIA = ['ph']; mostraP('ph'); });
 $('pDel').onclick = async () => {
   if (!await dialogo('Cancellare il profilo?', 'Le prenotazioni in programma verranno annullate e i tuoi dati cancellati. Non si può tornare indietro.', 'Sì, cancella', 'No')) return;
@@ -293,14 +296,25 @@ $('pDel').onclick = async () => {
 
 /* ---------- accesso ---------- */
 function apriLogin() { $('lErr').textContent = ''; $('login').hidden = false; }
+/* Termini e privacy: vanno accettati prima di accedere o registrarsi; l'accettazione si salva con data e ora */
+try { $('lOk').checked = localStorage.getItem('radiciConsenso') === '1'; } catch (e) {}
+$('lOk').onchange = () => { try { localStorage.setItem('radiciConsenso', $('lOk').checked ? '1' : '0'); } catch (e) {} };
+let consensoDaSalvare = false;
+async function consenso() {
+  if ($('lOk').checked) { consensoDaSalvare = true; return true; }
+  const c = document.querySelector('.consenso'); c.classList.remove('scuoti'); void c.offsetWidth; c.classList.add('scuoti');
+  await dialogo('Attenzione', 'Prima di poter proseguire devi dichiarare di aver preso visione dei termini del servizio e della privacy policy.', 'Ok');
+  return false;
+}
+document.querySelectorAll('[data-leggi]').forEach(a => a.onclick = e => { e.preventDefault(); $('login').hidden = true; vai(a.dataset.leggi); });
 $('lX').onclick = () => { $('login').hidden = true; };
 $('cBtn').onclick = () => utente ? signOut(auth) : apriLogin();
 const errAuth = e => ({ 'auth/invalid-credential': 'Email o password non corretti.', 'auth/wrong-password': 'Email o password non corretti.', 'auth/user-not-found': 'Email o password non corretti.', 'auth/invalid-email': 'Controlla l’indirizzo email.', 'auth/email-already-in-use': 'Esiste già un account con questa email: accedi.', 'auth/weak-password': 'La password deve avere almeno 6 caratteri.', 'auth/too-many-requests': 'Troppi tentativi: riprova tra qualche minuto.', 'auth/network-request-failed': 'Controlla la connessione e riprova.' })[e && e.code] || 'Operazione non riuscita. Riprova.';
 /* Google: nell'app Android con la scelta dell'account del telefono, sul sito con la finestra di Google */
 const FA = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins ? window.Capacitor.Plugins.FirebaseAuthentication : null;
-$('lGoogle').onclick = async () => { try { if (FA) { const r = await FA.signInWithGoogle(); await signInWithCredential(auth, GoogleAuthProvider.credential(r.credential && r.credential.idToken)); } else await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { if (/popup-closed|cancelled-popup/.test(e.code) || /cancel/i.test(String(e && e.message))) return; $('lErr').textContent = FA ? 'Accesso con Google non riuscito (' + (e.code || e.message || 'errore') + ').' : errAuth(e); } };
-$('lIn').onclick = async () => { const m = $('lMail').value.trim(), p = $('lPass').value; if (!m || !p) { $('lErr').textContent = 'Inserisci email e password.'; return; } try { await signInWithEmailAndPassword(auth, m, p); } catch (e) { $('lErr').textContent = errAuth(e); } };
-$('lReg').onclick = async () => { const m = $('lMail').value.trim(), p = $('lPass').value; if (!/^\S+@\S+\.\S+$/.test(m)) { $('lErr').textContent = 'Inserisci un’email valida.'; return; } if (p.length < 6) { $('lErr').textContent = 'Scegli una password di almeno 6 caratteri.'; return; } try { const c = await createUserWithEmailAndPassword(auth, m, p); sendEmailVerification(c.user).catch(() => {}); } catch (e) { $('lErr').textContent = errAuth(e); } };
+$('lGoogle').onclick = async () => { if (!await consenso()) return; try { if (FA) { const r = await FA.signInWithGoogle(); await signInWithCredential(auth, GoogleAuthProvider.credential(r.credential && r.credential.idToken)); } else await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { if (/popup-closed|cancelled-popup/.test(e.code) || /cancel/i.test(String(e && e.message))) return; $('lErr').textContent = FA ? 'Accesso con Google non riuscito (' + (e.code || e.message || 'errore') + ').' : errAuth(e); } };
+$('lIn').onclick = async () => { if (!await consenso()) return; const m = $('lMail').value.trim(), p = $('lPass').value; if (!m || !p) { $('lErr').textContent = 'Inserisci email e password.'; return; } try { await signInWithEmailAndPassword(auth, m, p); } catch (e) { $('lErr').textContent = errAuth(e); } };
+$('lReg').onclick = async () => { if (!await consenso()) return; const m = $('lMail').value.trim(), p = $('lPass').value; if (!/^\S+@\S+\.\S+$/.test(m)) { $('lErr').textContent = 'Inserisci un’email valida.'; return; } if (p.length < 6) { $('lErr').textContent = 'Scegli una password di almeno 6 caratteri.'; return; } try { const c = await createUserWithEmailAndPassword(auth, m, p); sendEmailVerification(c.user).catch(() => {}); } catch (e) { $('lErr').textContent = errAuth(e); } };
 $('lRes').onclick = async () => { const m = $('lMail').value.trim(); if (!/^\S+@\S+\.\S+$/.test(m)) { $('lErr').textContent = 'Scrivi la tua email, poi tocca “Password dimenticata?”.'; return; } try { await sendPasswordResetEmail(auth, m); } catch (e) {} $('lErr').textContent = 'Se l’email è registrata, ti abbiamo inviato un link per scegliere una nuova password.'; };
 
 let unsubMie = null;
@@ -312,8 +326,9 @@ onAuthStateChanged(auth, async u => {
     try { const d = await getDoc(doc(db, 'saloni', SALONE, 'clienti', u.uid)); if (d.exists()) PROF = d.data(); } catch (e) {}
     if (!PROF && u.displayName) { const p = u.displayName.split(' '); PROF = { nome: p[0], cogn: p.slice(1).join(' '), tel: '' }; }
     unsubMie = onSnapshot(query(colP, where('uid', '==', u.uid)), s => { MIE = s.docs.map(d => d.data()); mieOk = true; if (PAG === 'pm' || PAG === 'ph') mostraP(PAG); }, () => { mieOk = true; });
-  } else if (['pm', 'pp'].includes(PAG)) { STORIA = ['ph']; }
-  renderTesta(); mostraP(PAG === 'pm' || PAG === 'pp' ? (u ? PAG : 'ph') : PAG);
+  } else if (PAG === 'pm') { STORIA = ['ph']; }
+  if (u && consensoDaSalvare) { consensoDaSalvare = false; setDoc(doc(db, 'saloni', SALONE, 'clienti', u.uid), { consenso: { termini: true, privacy: true, data: Date.now() } }, { merge: true }).catch(() => {}); }
+  renderTesta(); mostraP(PAG === 'pm' ? (u ? PAG : 'ph') : PAG);
   prAuth = true; prova();
 });
 
