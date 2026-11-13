@@ -315,7 +315,7 @@ $('bConf').onclick = async () => {
   $('okTxt').textContent = `Ti aspettiamo ${dataLunga(giorno)} alle ${hm(ora)} con ${st.nome}.`;
   $('okCal').href = gcal(rec);
   sel = []; ora = null; giorno = null; staffSel = 'any'; $('fNote').value = '';
-  STORIA = ['ph']; vai('p5');
+  STORIA = ['ph']; vai('p5'); setTimeout(proponiNotifiche, 900);
 };
 function gcal(b) {
   const dt = (k, m) => k.replace(/-/g, '') + 'T' + p2(Math.floor(m / 60)) + p2(m % 60) + '00';
@@ -382,6 +382,7 @@ function renderProfilo() {
   $('pAv').innerHTML = foto ? `<img src="${esc(foto)}" alt="" referrerpolicy="no-referrer">` : esc(iniziali(n)); $('pNome').textContent = n; $('pMail').textContent = utente ? utente.email || '' : ''; $('pVer').textContent = VERSIONE;
   if (!utente) $('pAv').innerHTML = C.logo ? `<img src="${esc(C.logo)}" alt="">` : esc(iniziali(C.nome)[0]);
   $('tPriv').innerHTML = testoLegale(C.privacy || window.RADICI_SEED.privacy); $('tTerm').innerHTML = testoLegale(C.termini || window.RADICI_SEED.termini);
+  aggNotifiche();
 }
 /* foto del profilo: rimpicciolita sul telefono e salvata con i dati del cliente */
 function riduci(file, lato) { return new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { const s = Math.min(1, lato / Math.min(im.width, im.height)), c = document.createElement('canvas'), w = Math.round(im.width * s), h = Math.round(im.height * s), q = Math.min(w, h); c.width = c.height = q; c.getContext('2d').drawImage(im, (q - w) / 2, (q - h) / 2, w, h); ok(c.toDataURL('image/jpeg', .82)); }; im.onerror = ko; im.src = r.result; }; r.onerror = ko; r.readAsDataURL(file); }); }
@@ -402,7 +403,7 @@ $('eOk').onclick = async () => {
   catch (x) { $('eErr').textContent = 'Salvataggio non riuscito. Riprova.'; }
 };
 $('pIn').onclick = () => apriLogin();
-$('pOut').onclick = () => signOut(auth).then(() => { STORIA = ['ph']; mostraP('ph'); });
+$('pOut').onclick = () => togliDispositivo().then(() => signOut(auth)).then(() => { STORIA = ['ph']; mostraP('ph'); });
 $('pDel').onclick = async () => {
   if (!await dialogo('Cancellare il profilo?', 'Le prenotazioni in programma verranno annullate e i tuoi dati cancellati. Non si può tornare indietro.', 'Sì, cancella', 'No')) return;
   try {
@@ -445,6 +446,7 @@ onAuthStateChanged(auth, async u => {
     $('login').hidden = true;
     try { const d = await getDoc(doc(db, 'saloni', SALONE, 'clienti', u.uid)); if (d.exists()) PROF = d.data(); } catch (e) {}
     if (!PROF && u.displayName) { const p = u.displayName.split(' '); PROF = { nome: p[0], cogn: p.slice(1).join(' '), tel: '' }; }
+    setTimeout(() => { if (PROF && PROF.notifiche) attivaPush(false); }, 1500);
     unsubFid = onSnapshot(query(colF, where('uid', '==', u.uid)), s => { FMIE = s.docs.map(d => d.data()); fidOk = true; if (PAG === 'pf') renderFid(); }, () => { fidOk = true; if (PAG === 'pf') renderFid(); });
     unsubMie = onSnapshot(query(colP, where('uid', '==', u.uid)), s => { MIE = s.docs.map(d => d.data()); mieOk = true; if (PAG === 'pm' || PAG === 'ph') mostraP(PAG); }, () => { mieOk = true; });
   } else if (PAG === 'pm') { STORIA = ['ph']; }
@@ -500,3 +502,55 @@ if (APP) {
 window.riempiIcone(); try { history.replaceState({ r: 1 }, ''); } catch (e) {}
 mostraP('ph');
 if (!APP && 'serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+
+/* ---------- notifiche push (app Android): promemoria degli appuntamenti e messaggi del salone.
+   Le invia il server (Firebase Cloud Functions) secondo quanto deciso nella dashboard → Notifiche push.
+   Qui l'app chiede il permesso, registra il telefono del cliente e apre la pagina giusta quando si tocca la notifica. ---------- */
+var PUSH = APP && window.Capacitor.Plugins ? window.Capacitor.Plugins.FirebaseMessaging || null : null;
+var pushToken = '';
+async function salvaDispositivo(t) {
+  if (!utente || !t) return; pushToken = t;
+  const l = ((PROF && PROF.dispositivi) || []).filter(d => d.token !== t).slice(-4).concat({ token: t, os: 'android', agg: Date.now() });
+  try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), { dispositivi: l, notifiche: true }, { merge: true }); PROF = Object.assign(PROF || {}, { dispositivi: l, notifiche: true }); } catch (e) {}
+}
+async function togliDispositivo(spegni) {
+  if (!PUSH || !utente || !pushToken) return;
+  const l = ((PROF && PROF.dispositivi) || []).filter(d => d.token !== pushToken), d = { dispositivi: l }; if (spegni) d.notifiche = false;
+  try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), d, { merge: true }); PROF = Object.assign(PROF || {}, d); } catch (e) {}
+}
+/* chiedi=true mostra la richiesta di Android; false aggiorna solo il codice del telefono se il permesso c'è già */
+async function attivaPush(chiedi) {
+  if (!PUSH || !utente) return 'nd';
+  try {
+    let p = (await PUSH.checkPermissions()).receive;
+    if (p !== 'granted' && chiedi) p = (await PUSH.requestPermissions()).receive;
+    if (p !== 'granted') return p === 'denied' ? 'negato' : 'no';
+    const r = await PUSH.getToken(); await salvaDispositivo(r.token); return 'si';
+  } catch (e) { return 'errore'; }
+}
+function aggNotifiche() {
+  const b = $('pNot'); if (!b) return; b.hidden = !PUSH || !utente; if (b.hidden) return;
+  $('pNotT').textContent = 'Notifiche: ' + (PROF && PROF.notifiche ? 'attive' : 'disattivate');
+}
+if ($('pNot')) $('pNot').onclick = async () => {
+  if (PROF && PROF.notifiche) { await togliDispositivo(true); aggNotifiche(); toast('Notifiche disattivate'); return; }
+  const r = await attivaPush(true); aggNotifiche();
+  if (r === 'si') toast('Notifiche attive');
+  else if (r === 'negato') avvisa('Le notifiche sono bloccate nelle impostazioni del telefono. Per attivarle: Impostazioni → App → ' + C.nome + ' → Notifiche.');
+  else if (r === 'errore') avvisa('Non è stato possibile attivare le notifiche. Riprova più tardi.');
+};
+/* dopo la prima prenotazione: chiedo una volta sola se vuole i promemoria */
+async function proponiNotifiche() {
+  if (!PUSH || !utente || (PROF && PROF.notifiche !== undefined)) return;
+  const ok = await dialogo('Vuoi un promemoria?', 'Ti avvisiamo con una notifica prima dell’appuntamento. Puoi cambiare idea quando vuoi dal Profilo.', 'Sì, avvisami', 'No, grazie');
+  if (ok) { const r = await attivaPush(true); if (r === 'si') toast('Perfetto, ti avviseremo'); aggNotifiche(); }
+  else { try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), { notifiche: false }, { merge: true }); PROF = Object.assign(PROF || {}, { notifiche: false }); } catch (e) {} aggNotifiche(); }
+}
+if (PUSH) {
+  PUSH.createChannel({ id: 'promemoria', name: 'Promemoria appuntamenti', description: 'Avvisi prima dei tuoi appuntamenti', importance: 4, visibility: 1, vibration: true }).catch(() => {});
+  PUSH.createChannel({ id: 'salone', name: 'Comunicazioni del salone', description: 'Novità, punti fedeltà e messaggi del salone', importance: 3, visibility: 1 }).catch(() => {});
+  PUSH.addListener('tokenReceived', e => { if (utente && PROF && PROF.notifiche) salvaDispositivo(e.token); });
+  /* con l'app aperta Android non mostra la notifica: la faccio vedere io */
+  PUSH.addListener('notificationReceived', e => { const n = e.notification || {}; if (n.title || n.body) toast((n.title ? n.title + ' – ' : '') + (n.body || '')); });
+  PUSH.addListener('notificationActionPerformed', e => { const d = (e.notification && e.notification.data) || {}; if (['pm', 'pa', 'pf', 'ph', 'p1', 'pi'].includes(d.pagina)) setTimeout(() => vai(d.pagina), 700); });
+}

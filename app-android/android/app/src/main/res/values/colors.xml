@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- colore dell'icona delle notifiche -->
+    <color name="notifica">#6E7A3C</color>
+</resources>
