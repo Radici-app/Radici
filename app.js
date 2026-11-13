@@ -1,12 +1,14 @@
 /* Radici – app clienti */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithPopup, signInWithCredential, GoogleAuthProvider, signOut, deleteUser } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot, query, where, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot, query, where, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const VERSIONE = '1.0';
 const SALONE = 'radici';
 const fbApp = initializeApp({ apiKey: 'AIzaSyCUhd6pXSheUQ6gPhT5OfvprM5dYI2uxz4', authDomain: 'radici-app.firebaseapp.com', projectId: 'radici-app', storageBucket: 'radici-app.firebasestorage.app', messagingSenderId: '602201707324', appId: '1:602201707324:web:88d8681280de279b81c439' });
-const auth = getAuth(fbApp), db = getFirestore(fbApp);
+const auth = getAuth(fbApp);
+/* i dati letti restano salvati sul telefono: riaprendo l'app Firebase rimanda solo quello che è cambiato */
+let db; try { db = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); } catch (e) { db = getFirestore(fbApp); }
 const colP = collection(db, 'saloni', SALONE, 'prenotazioni'), colB = collection(db, 'saloni', SALONE, 'busy'), colA = collection(db, 'saloni', SALONE, 'avvisi'), colG = collection(db, 'saloni', SALONE, 'galleria'), colF = collection(db, 'saloni', SALONE, 'punti');
 
 /* ---------- utilità ---------- */
@@ -35,7 +37,14 @@ let sel = [], staffSel = 'any', giorno = null, ora = null, mese = null;
 let prCfg = false, prAuth = false;
 const prova = () => { if (prCfg && prAuth && window.splashPronto) window.splashPronto(); };
 onSnapshot(doc(db, 'saloni', SALONE), s => { if (s.exists()) { C = Object.assign(cp(window.RADICI_SEED), window.fasceDaDb(s.data())); window.splashDati && window.splashDati(C); sel = sel.filter(id => serv(id)); ridisegna(); } prCfg = true; prova(); }, () => { prCfg = true; prova(); });
-onSnapshot(colB, s => { BUSY = s.docs.map(d => d.data()); busyOk = true; if (PAG === 'p3') renderSlots(); }, () => { busyOk = true; });
+/* orari occupati: si scaricano solo quando il cliente sceglie giorno e ora, e solo per il mese che sta guardando */
+let unsubBusy = null, busyChiave = '';
+function seguiBusy(da, a) {
+  if (giorno && giorno < da) da = giorno; if (giorno && giorno > a) a = giorno;
+  const k = da + '|' + a; if (k === busyChiave) return; busyChiave = k;
+  if (unsubBusy) unsubBusy(); busyOk = false; BUSY = [];
+  unsubBusy = onSnapshot(query(colB, where('data', '>=', da), where('data', '<=', a)), s => { BUSY = s.docs.map(d => d.data()); busyOk = true; if (PAG === 'p3') renderSlots(); }, () => { busyOk = true; if (PAG === 'p3') renderSlots(); });
+}
 
 const serv = id => C.servizi.find(s => s.id === id);
 const cat = id => C.categorie.find(c => c.id === id);
@@ -97,7 +106,8 @@ onSnapshot(colA, s => { AV = s.docs.map(d => d.data()); aggAvvisi(); if (PAG ===
 
 /* ---------- galleria: miniature scorrevoli, foto grande a schermo intero ---------- */
 let GA = [], galAl = null, galL = [], galI = 0;
-onSnapshot(colG, s => { GA = s.docs.map(d => d.data()); if (PAG === 'pi') renderGalleria(); }, () => {});
+let unsubGal = null; /* la galleria (foto) si scarica solo quando si apre Informazioni negozio */
+function seguiGalleria() { if (unsubGal) return; unsubGal = onSnapshot(colG, s => { GA = s.docs.map(d => d.data()); if (PAG === 'pi') renderGalleria(); }, () => {}); }
 function renderGalleria() {
   const A = (C.album || []).filter(a => GA.some(f => f.album === a.id));
   if (!A.length) { $('iGal').innerHTML = ''; return; }
@@ -214,7 +224,7 @@ function renderInfo() {
   $('iChiuso').innerHTML = ch ? `<div class="row" style="margin-top:14px"><b>Chiuso ${ch.da === ch.a ? dataLunga(ch.da) : 'dal ' + dataLunga(ch.da) + ' al ' + dataLunga(ch.a)}</b>${ch.msg ? `<small>${esc(ch.msg)}</small>` : ''}</div>` : '';
   $('iAddr').innerHTML = C.indirizzo ? `<h3>Indirizzo</h3><p style="margin:0">${esc(C.indirizzo)}</p>` : '';
   $('iDesc').textContent = C.descrizione || '';
-  renderGalleria();
+  seguiGalleria(); renderGalleria();
   $('iStaff').innerHTML = C.staff.map(st => `<div class="op">${avatar(st)}<b>${esc(st.nome)}</b></div>`).join('');
   const d = new Date().getDay();
   $('iOrari').innerHTML = ORD.map(g => { const f = C.orari[g] || []; return `<div class="orw${g === d ? ' oggi' : ''}"><b>${GIORNI[g].slice(0, 3).toUpperCase()}</b><span>${f.length ? f.map(x => hm(x[0]) + ' – ' + hm(x[1])).join('&nbsp;&nbsp; ') : 'Chiuso'}</span></div>`; }).join('');
@@ -262,6 +272,7 @@ function renderGiorni() {
   const t = new Date(); if (!mese) mese = { y: t.getFullYear(), m: t.getMonth() };
   const max = new Date(); max.setDate(max.getDate() + C.regole.giorniMax);
   const f = new Date(mese.y, mese.m, 1), off = (f.getDay() + 6) % 7, n = new Date(mese.y, mese.m + 1, 0).getDate();
+  seguiBusy(iso(f) < oggi() ? oggi() : iso(f), iso(new Date(mese.y, mese.m, n)));
   let g = ['L', 'M', 'M', 'G', 'V', 'S', 'D'].map(x => `<span class="wd">${x}</span>`).join('') + '<span></span>'.repeat(off);
   for (let d = 1; d <= n; d++) { const k = iso(new Date(mese.y, mese.m, d)); g += `<button data-k="${k}" ${giornoOk(k) ? '' : 'disabled'} aria-pressed="${giorno === k}">${d}</button>`; }
   const prevOff = mese.y * 12 + mese.m <= t.getFullYear() * 12 + t.getMonth(), nextOff = mese.y * 12 + mese.m >= max.getFullYear() * 12 + max.getMonth();
@@ -314,7 +325,7 @@ $('bConf').onclick = async () => {
   try {
     const w = writeBatch(db);
     w.set(doc(colP, id), rec); w.set(doc(colB, id), { data: giorno, ini: ora, fine: ora + dur, staff: st.id });
-    w.set(doc(db, 'saloni', SALONE, 'clienti', utente.uid), { nome: n, cogn: c, tel: t, mail: utente.email || '' }, { merge: true });
+    w.set(doc(db, 'saloni', SALONE, 'clienti', utente.uid), Object.assign({ agg: Date.now() }, { nome: n, cogn: c, tel: t, mail: utente.email || '' }), { merge: true });
     await w.commit();
   } catch (x) { b.classList.remove('load'); return E('Prenotazione non riuscita. Controlla la connessione e riprova.'); }
   b.classList.remove('load'); PROF = Object.assign(PROF || {}, { nome: n, cogn: c, tel: t });
@@ -396,9 +407,9 @@ function riduci(file, lato) { return new Promise((ok, ko) => { const r = new Fil
 $('pFile').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f || !utente) return;
   if (PROF && PROF.foto && !await dialogo('Foto del profilo', 'Vuoi sostituire la foto attuale?', 'Sostituisci', 'Togli la foto')) {
-    try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), { foto: '' }, { merge: true }); PROF.foto = ''; renderProfilo(); toast('Foto tolta'); } catch (x) { avvisa('Non riuscito. Riprova.'); } return;
+    try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), Object.assign({ agg: Date.now() }, { foto: '' }), { merge: true }); PROF.foto = ''; renderProfilo(); toast('Foto tolta'); } catch (x) { avvisa('Non riuscito. Riprova.'); } return;
   }
-  try { const foto = await riduci(f, 256); await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), { foto }, { merge: true }); PROF = Object.assign(PROF || {}, { foto }); renderProfilo(); toast('Foto aggiornata'); }
+  try { const foto = await riduci(f, 256); await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), Object.assign({ agg: Date.now() }, { foto }), { merge: true }); PROF = Object.assign(PROF || {}, { foto }); renderProfilo(); toast('Foto aggiornata'); }
   catch (x) { avvisa('Non riesco a caricare la foto. Prova con un’altra immagine.'); }
 };
 $('pMod').onclick = () => { const p = PROF || {}; $('eNome').value = p.nome || ''; $('eCogn').value = p.cogn || ''; $('eTel').value = p.tel || ''; $('eErr').textContent = ''; $('prof').hidden = false; };
@@ -406,7 +417,7 @@ $('eNo').onclick = () => { $('prof').hidden = true; };
 $('eOk').onclick = async () => {
   const d = { nome: $('eNome').value.trim(), cogn: $('eCogn').value.trim(), tel: $('eTel').value.trim(), mail: utente.email || '' };
   if (!d.nome || !d.cogn) { $('eErr').textContent = 'Inserisci nome e cognome.'; return; }
-  try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), d, { merge: true }); PROF = d; $('prof').hidden = true; renderProfilo(); toast('Dati salvati'); }
+  try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), Object.assign({ agg: Date.now() }, d), { merge: true }); PROF = d; $('prof').hidden = true; renderProfilo(); toast('Dati salvati'); }
   catch (x) { $('eErr').textContent = 'Salvataggio non riuscito. Riprova.'; }
 };
 $('pIn').onclick = () => apriLogin();
@@ -454,10 +465,10 @@ onAuthStateChanged(auth, async u => {
     try { const d = await getDoc(doc(db, 'saloni', SALONE, 'clienti', u.uid)); if (d.exists()) PROF = d.data(); } catch (e) {}
     if (!PROF && u.displayName) { const p = u.displayName.split(' '); PROF = { nome: p[0], cogn: p.slice(1).join(' '), tel: '' }; }
     setTimeout(() => { if (PROF && PROF.notifiche) attivaPush(false); }, 1500);
-    unsubFid = onSnapshot(query(colF, where('uid', '==', u.uid)), s => { FMIE = s.docs.map(d => d.data()); fidOk = true; if (PAG === 'pf') renderFid(); }, () => { fidOk = true; if (PAG === 'pf') renderFid(); });
+    unsubFid = onSnapshot(query(colF, where('uid', '==', u.uid)), s => { FMIE = s.docs.map(d => d.data()).filter(m => !m.annullato); fidOk = true; if (PAG === 'pf') renderFid(); }, () => { fidOk = true; if (PAG === 'pf') renderFid(); });
     unsubMie = onSnapshot(query(colP, where('uid', '==', u.uid)), s => { MIE = s.docs.map(d => d.data()); mieOk = true; if (PAG === 'pm' || PAG === 'ph') mostraP(PAG); }, () => { mieOk = true; });
   } else if (PAG === 'pm') { STORIA = ['ph']; }
-  if (u && consensoDaSalvare) { consensoDaSalvare = false; setDoc(doc(db, 'saloni', SALONE, 'clienti', u.uid), { consenso: { termini: true, privacy: true, data: Date.now() } }, { merge: true }).catch(() => {}); }
+  if (u && consensoDaSalvare) { consensoDaSalvare = false; setDoc(doc(db, 'saloni', SALONE, 'clienti', u.uid), Object.assign({ agg: Date.now() }, { consenso: { termini: true, privacy: true, data: Date.now() } }), { merge: true }).catch(() => {}); }
   renderTesta(); mostraP(PAG === 'pm' ? (u ? PAG : 'ph') : PAG);
   prAuth = true; prova();
 });
@@ -519,12 +530,12 @@ var pushToken = '';
 async function salvaDispositivo(t) {
   if (!utente || !t) return; pushToken = t;
   const l = ((PROF && PROF.dispositivi) || []).filter(d => d.token !== t).slice(-4).concat({ token: t, os: 'android', agg: Date.now() });
-  try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), { dispositivi: l, notifiche: true }, { merge: true }); PROF = Object.assign(PROF || {}, { dispositivi: l, notifiche: true }); } catch (e) {}
+  try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), Object.assign({ agg: Date.now() }, { dispositivi: l, notifiche: true }), { merge: true }); PROF = Object.assign(PROF || {}, { dispositivi: l, notifiche: true }); } catch (e) {}
 }
 async function togliDispositivo(spegni) {
   if (!PUSH || !utente || !pushToken) return;
   const l = ((PROF && PROF.dispositivi) || []).filter(d => d.token !== pushToken), d = { dispositivi: l }; if (spegni) d.notifiche = false;
-  try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), d, { merge: true }); PROF = Object.assign(PROF || {}, d); } catch (e) {}
+  try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), Object.assign({ agg: Date.now() }, d), { merge: true }); PROF = Object.assign(PROF || {}, d); } catch (e) {}
 }
 /* chiedi=true mostra la richiesta di Android; false aggiorna solo il codice del telefono se il permesso c'è già */
 async function attivaPush(chiedi) {
@@ -552,7 +563,7 @@ async function proponiNotifiche() {
   if (!PUSH || !utente || (PROF && PROF.notifiche !== undefined)) return;
   const ok = await dialogo('Vuoi un promemoria?', 'Ti avvisiamo con una notifica prima dell’appuntamento. Puoi cambiare idea quando vuoi dal Profilo.', 'Sì, avvisami', 'No, grazie');
   if (ok) { const r = await attivaPush(true); if (r === 'si') toast('Perfetto, ti avviseremo'); aggNotifiche(); }
-  else { try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), { notifiche: false }, { merge: true }); PROF = Object.assign(PROF || {}, { notifiche: false }); } catch (e) {} aggNotifiche(); }
+  else { try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), Object.assign({ agg: Date.now() }, { notifiche: false }), { merge: true }); PROF = Object.assign(PROF || {}, { notifiche: false }); } catch (e) {} aggNotifiche(); }
 }
 if (PUSH) {
   PUSH.createChannel({ id: 'promemoria', name: 'Promemoria appuntamenti', description: 'Avvisi prima dei tuoi appuntamenti', importance: 4, visibility: 1, vibration: true }).catch(() => {});
