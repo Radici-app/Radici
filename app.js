@@ -165,10 +165,16 @@ addEventListener('resize', () => { if (PAG === 'ph') { adattaTesti(); disegnaAlb
 /* ---------- il marchio "Radici" nello spazio libero sotto il menu: le radici crescono la prima volta, poi restano vive ---------- */
 let alberoFatto = false, alberoMis = '';
 function disegnaAlbero() {
-  const el = $('albero'); if (!el || PAG !== 'ph') return;
-  const top = el.getBoundingClientRect().top + scrollY, W = Math.round(el.clientWidth), H = Math.min(460, Math.round(innerHeight - top - 14)), sotto = C.sottotitolo || '';
-  const mis = W + 'x' + H + sotto; if (mis === alberoMis) { nonSporgere(el); return; } alberoMis = mis;
-  if (H < 170 || W < 160) { el.innerHTML = ''; el.style.height = '0'; return; }
+  const el = $('albero'), cov = $('cover'); if (!el || PAG !== 'ph') return;
+  const spazio = () => Math.min(460, Math.round(innerHeight - (el.getBoundingClientRect().top + scrollY) - 14));
+  /* il marchio si adatta allo spazio del telefono, senza far scorrere la pagina: se lo spazio è poco
+     abbasso prima un po' la copertina in alto (fino a 120 px), poi il marchio si rimpicciolisce */
+  if (cov) cov.style.height = '';
+  let H = spazio();
+  if (cov && H < 200) { const h0 = cov.offsetHeight; cov.style.height = Math.max(120, h0 - (200 - H)) + 'px'; H = spazio(); }
+  const W = Math.round(el.clientWidth), sotto = C.sottotitolo || '', mis = W + 'x' + H + sotto;
+  if (mis === alberoMis) { nonSporgere(el); return; } alberoMis = mis;
+  if (H < 70 || W < 160) { el.innerHTML = ''; el.style.height = '0'; return; }
   el.style.height = H + 'px';
   if (!nonSporgere(el)) return;
   el.innerHTML = '<div class="marchio"></div>';
@@ -178,7 +184,7 @@ function disegnaAlbero() {
 /* se la pagina è più alta dello schermo (barre di sistema, margini) accorcio lo spazio della scritta, così la home non scorre */
 function nonSporgere(el) {
   const extra = document.documentElement.scrollHeight - innerHeight; if (extra <= 0) return true;
-  const h2 = el.offsetHeight - extra - 2; if (h2 < 170) { el.innerHTML = ''; el.style.height = '0'; alberoMis = ''; return false; }
+  const h2 = el.offsetHeight - extra - 2; if (h2 < 70) { el.innerHTML = ''; el.style.height = '0'; alberoMis = ''; return false; }
   el.style.height = h2 + 'px'; return true;
 }
 /* ogni tanto le radici ricrescono da sole (ogni 40 secondi circa, solo con la home in vista); toccando la scritta ricrescono subito */
