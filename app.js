@@ -65,7 +65,7 @@ function mostraP(p) {
 }
 function vai(p) { if (p === 'ph') STORIA = ['ph']; else if (STORIA[STORIA.length - 1] !== p) { STORIA.push(p); try { history.pushState({ r: STORIA.length }, ''); } catch (e) {} } mostraP(p); }
 function indietro() { if (STORIA.length > 1) history.back(); else mostraP('ph'); }
-addEventListener('popstate', () => { if (!$('viewer').hidden) { chiudiFoto(); return; } for (const id of ['login', 'dlg', 'prof']) if (!$(id).hidden) { $(id).hidden = true; return; } if (STORIA.length > 1) { STORIA.pop(); mostraP(STORIA[STORIA.length - 1]); } });
+addEventListener('popstate', () => { if (!$('viewer').hidden) { chiudiFoto(); return; } for (const id of ['calq', 'login', 'dlg', 'prof']) if (!$(id).hidden) { $(id).hidden = true; return; } if (STORIA.length > 1) { STORIA.pop(); mostraP(STORIA[STORIA.length - 1]); } });
 document.addEventListener('click', e => {
   const g = e.target.closest('[data-go]'); if (g) { const p = g.dataset.go; if (p === 'pm' && !utente) { apriLogin(); return; } if (p === 'ph' || p === 'p1' && PAG === 'p5') STORIA = ['ph']; vai(p); return; }
   if (e.target.closest('[data-back]')) indietro();
@@ -313,9 +313,9 @@ $('bConf').onclick = async () => {
   } catch (x) { b.classList.remove('load'); return E('Prenotazione non riuscita. Controlla la connessione e riprova.'); }
   b.classList.remove('load'); PROF = Object.assign(PROF || {}, { nome: n, cogn: c, tel: t });
   $('okTxt').textContent = `Ti aspettiamo ${dataLunga(giorno)} alle ${hm(ora)} con ${st.nome}.`;
-  $('okCal').href = gcal(rec);
+  ULTIMA = rec;
   sel = []; ora = null; giorno = null; staffSel = 'any'; $('fNote').value = '';
-  STORIA = ['ph']; vai('p5'); setTimeout(proponiNotifiche, 900);
+  STORIA = ['ph']; vai('p5'); setTimeout(async () => { await chiediCalendario(rec); proponiNotifiche(); }, 600);
 };
 function gcal(b) {
   const dt = (k, m) => k.replace(/-/g, '') + 'T' + p2(Math.floor(m / 60)) + p2(m % 60) + '00';
@@ -333,7 +333,8 @@ function renderMie() {
   $('mList').innerHTML = l.map(b => { const d = new Date(b.data + 'T12:00'), st = C.staff.find(s => s.id === b.staff) || { nome: b.staffNome };
     return `<div class="bk${b.stato === 'annullata' ? ' ann' : ''}"><div class="dt"><i>${d.toLocaleDateString('it-IT', { month: 'short' })}</i><span>${d.toLocaleDateString('it-IT', { weekday: 'short' })}</span><b>${d.getDate()}</b><em>${hm(b.ini)}</em></div>
      <div class="bd"><div class="who">${avatar(st)}${esc(st.nome)}</div>${b.servizi.map(s => `<span class="chip">${esc(s.nome)}</span>`).join('')}${b.stato === 'annullata' ? '<small style="display:block;margin-top:6px;color:var(--wait)">Annullata</small>' : ''}
-     ${!storico ? `<button class="x" data-x="${b.id}" aria-label="Annulla">✕</button>` : ''}</div></div>`; }).join('');
+     ${!storico ? `<button class="calx" data-cal="${b.id}">📅 Aggiungi al calendario</button><button class="x" data-x="${b.id}" aria-label="Annulla">✕</button>` : ''}</div></div>`; }).join('');
+  $('mList').querySelectorAll('[data-cal]').forEach(k => k.onclick = () => { const b = MIE.find(z => z.id === k.dataset.cal); if (b) chiediCalendario(b); });
   $('mList').querySelectorAll('[data-x]').forEach(k => k.onclick = async () => {
     const b = MIE.find(z => z.id === k.dataset.x); if (!b) return;
     if (minutiA(b) < C.regole.annulloMin) { avvisa('Si può annullare dall’app fino a ' + fd(C.regole.annulloMin) + ' prima dell’appuntamento. Contatta il salone.'); return; }
@@ -463,6 +464,7 @@ if (APP) {
   const N = window.Capacitor.Plugins || {};
   if (N.App) N.App.addListener('backButton', () => {
     if (!$('viewer').hidden) { history.back(); return; }
+    if (!$('calq').hidden) { $('calqNo').click(); return; }
     for (const id of ['dlg', 'prof', 'login']) if (!$(id).hidden) { if (id === 'dlg') ($('dlgNo').hidden ? $('dlgOk') : $('dlgNo')).click(); else $(id).hidden = true; return; }
     if (PAG !== 'ph') { indietro(); return; }
     N.App.exitApp();
@@ -553,4 +555,63 @@ if (PUSH) {
   /* con l'app aperta Android non mostra la notifica: la faccio vedere io */
   PUSH.addListener('notificationReceived', e => { const n = e.notification || {}; if (n.title || n.body) toast((n.title ? n.title + ' – ' : '') + (n.body || '')); });
   PUSH.addListener('notificationActionPerformed', e => { const d = (e.notification && e.notification.data) || {}; if (['pm', 'pa', 'pf', 'ph', 'p1', 'pi'].includes(d.pagina)) setTimeout(() => vai(d.pagina), 700); });
+}
+
+/* ---------- AGGIUNGI AL CALENDARIO (come nella vecchia app Nails & Makeup, già collaudato) ----------
+   iPhone: file .ics aperto direttamente → si apre il Calendario dell'iPhone con data e ora già inserite (basta premere Aggiungi).
+   Android: app Google Calendar (o, dal sito, un altro calendario del telefono con il file .ics).
+   Computer: Google Calendar sul web. */
+const ANDROID = /Android/i.test(navigator.userAgent);
+const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.userAgent.includes('Macintosh') && navigator.maxTouchPoints > 1);
+const calDT = (k, m) => { const [y, mo, d] = k.split('-').map(Number), t = new Date(y, mo - 1, d, 0, m); return '' + t.getFullYear() + p2(t.getMonth() + 1) + p2(t.getDate()) + 'T' + p2(t.getHours()) + p2(t.getMinutes()) + '00'; };
+const calEsc = t => String(t).replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n');
+const calTitolo = b => (b.servizi || []).map(s => s.nome).join(', ') + ' – ' + C.nome;
+const calFine = b => b.fine || (b.ini + (b.dur || 60));
+const calNote = b => 'Appuntamento prenotato con l’app' + (C.telefono ? '. Per spostarlo: ' + C.telefono : '') + '.';
+const calWeb = (b, base) => (base || 'https://calendar.google.com/calendar/render') + '?action=TEMPLATE&text=' + encodeURIComponent(calTitolo(b)) + '&dates=' + calDT(b.data, b.ini) + '/' + calDT(b.data, calFine(b)) + '&ctz=Europe%2FRome&details=' + encodeURIComponent(calNote(b)) + (C.indirizzo ? '&location=' + encodeURIComponent(C.indirizzo) : '');
+function apriGoogleCalendar(b) {
+  if (APP) { location.href = calWeb(b, 'https://www.google.com/calendar/event'); return; } /* nell'app il link si apre fuori: Android lo passa a Google Calendar */
+  if (ANDROID) { /* il Calendar accetta dai link solo www.google.com/calendar/event: con l'intent si apre l'app, se manca si va al Play Store */
+    location.href = calWeb(b, 'intent://www.google.com/calendar/event') + '#Intent;scheme=https;package=com.google.android.calendar;S.browser_fallback_url=' + encodeURIComponent('https://play.google.com/store/apps/details?id=com.google.android.calendar') + ';end';
+    return;
+  }
+  const web = calWeb(b); if (IOS) location.href = web; else window.open(web, '_blank', 'noopener') || (location.href = web);
+}
+function icsAppuntamento(b) {
+  const n = new Date(), st = '' + n.getUTCFullYear() + p2(n.getUTCMonth() + 1) + p2(n.getUTCDate()) + 'T' + p2(n.getUTCHours()) + p2(n.getUTCMinutes()) + p2(n.getUTCSeconds()) + 'Z';
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//' + C.nome + '//IT', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT', 'UID:' + (C.id || 'app') + '-' + b.id + '@prenota', 'DTSTAMP:' + st,
+    'DTSTART:' + calDT(b.data, b.ini), 'DTEND:' + calDT(b.data, calFine(b)), 'SUMMARY:' + calEsc(calTitolo(b)), 'DESCRIPTION:' + calEsc(calNote(b))].concat(C.indirizzo ? ['LOCATION:' + calEsc(C.indirizzo)] : [])
+    .concat(['BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY', 'DESCRIPTION:Promemoria appuntamento', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR']).join('\r\n') + '\r\n';
+}
+function scaricaIcs(b) {
+  const u = URL.createObjectURL(new Blob([icsAppuntamento(b)], { type: 'text/calendar;charset=utf-8' })), a = document.createElement('a');
+  a.href = u; if (!IOS) a.download = 'appuntamento.ics'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(u); a.remove(); }, 60000);
+}
+/* tasti nella pagina "Prenotazione confermata" */
+let ULTIMA = null;
+function tastiCalendario() {
+  $('calG').hidden = IOS; $('calA').hidden = APP;
+  $('calA').textContent = ANDROID ? '📅 Calendario del telefono (Samsung, altri)' : IOS ? '🍎 Aggiungi al Calendario dell’iPhone' : '🍎 Aggiungi a Calendario Apple / Outlook';
+}
+$('calG').onclick = () => { if (ULTIMA) apriGoogleCalendar(ULTIMA); };
+$('calA').onclick = () => { if (ULTIMA) scaricaIcs(ULTIMA); };
+tastiCalendario();
+/* domanda subito dopo la prenotazione (e dal tasto 📅 nelle prenotazioni) */
+function chiediCalendario(b) {
+  return new Promise(fine => {
+    const chiudi = () => { $('calq').hidden = true; fine(); };
+    const quando = dataLunga(b.data) + ' alle ' + hm(b.ini);
+    if (IOS) {
+      $('calqTxt').textContent = 'Vuoi aggiungere l’appuntamento di ' + quando + ' al Calendario dell’iPhone? Si apre già con data e ora inserite: ti basta premere Aggiungi.';
+      $('calqSi').textContent = 'Sì, aggiungi al Calendario'; $('calqAltro').hidden = true;
+      $('calqSi').onclick = () => { chiudi(); scaricaIcs(b); };
+    } else {
+      $('calqTxt').textContent = 'Vuoi aggiungere l’appuntamento di ' + quando + ' a Google Calendar? Si apre già con data e ora inserite: ti basta premere Salva.' + (ANDROID && !APP ? ' Se non hai l’app Google Calendar, scegli “Uso un altro calendario”.' : '');
+      $('calqSi').textContent = 'Sì, aggiungi a Google Calendar'; $('calqAltro').hidden = !ANDROID || APP;
+      $('calqSi').onclick = () => { chiudi(); apriGoogleCalendar(b); };
+      $('calqAltro').onclick = () => { chiudi(); scaricaIcs(b); };
+    }
+    $('calqNo').onclick = chiudi;
+    $('calq').hidden = false;
+  });
 }
