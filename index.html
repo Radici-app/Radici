@@ -18,7 +18,7 @@
 <style>
 :root{
  --bg:#F5F4EE;--surf:#fff;--ink:#23271A;--mute:#6B705C;--line:#E2E2D5;--soft:#ECEEE2;--head:#2E3420;
- --acc:#8E9A55;--pri:#4F5A2A;--onpri:#fff;--gold:#B08A4E;--ok:#2F7D5B;--wait:#C0392B;
+ --acc:#8E9A55;--pri:#4F5A2A;--onpri:#fff;--gold:#B08A4E;--ok:#2F7D5B;--wait:#C0392B;--tronco:#7A6347;
  --t1:#E6EAD5;--t2:#EFE6D6;--t3:#E3E8DF;--t4:#F1E9DF;--t5:#E7E3EE;
  --sh:0 1px 2px rgba(46,52,32,.05),0 14px 26px -20px rgba(46,52,32,.45);
  --vel:rgba(35,39,26,.5);--barra:rgba(245,244,238,.94);
@@ -26,7 +26,7 @@
  color-scheme:light;box-sizing:border-box;padding-top:var(--sat);padding-bottom:var(--sab)}
 @media(prefers-color-scheme:dark){:root{
  --bg:#14160F;--surf:#1E2117;--ink:#EEF0E4;--mute:#AEB39B;--line:#33382A;--soft:#272B1E;--head:#E4E9CF;
- --acc:#B5C27A;--pri:#B5C27A;--onpri:#1B1E12;--gold:#D6B67E;--ok:#6FCF9F;--wait:#FF8A80;
+ --acc:#B5C27A;--pri:#B5C27A;--onpri:#1B1E12;--gold:#D6B67E;--ok:#6FCF9F;--wait:#FF8A80;--tronco:#B09370;
  --t1:#2A3020;--t2:#30291F;--t3:#232B24;--t4:#2F2722;--t5:#2A2633;
  --sh:0 1px 2px rgba(0,0,0,.3),0 14px 26px -18px rgba(0,0,0,.7);--vel:rgba(0,0,0,.6);--barra:rgba(20,22,15,.92);color-scheme:dark}}
 *,*::before,*::after{box-sizing:inherit}
@@ -49,6 +49,13 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offse
 .cover{position:relative;margin:14px 0 0;height:190px;border-radius:30px;overflow:hidden;background:linear-gradient(135deg,var(--acc),var(--pri))}
 /* Testi dei riquadri: si adattano alla larghezza, anche con il carattere del telefono ingrandito */
 #ph .menu{container-type:inline-size}
+.albero{margin:6px 0 -110px;pointer-events:none}.albero svg{display:block;width:100%;height:100%;overflow:visible}
+.albero .cr{stroke:var(--tronco);fill:none;stroke-linecap:round}.albero .rd{stroke:var(--tronco);fill:none;stroke-linecap:round}
+.albero .ve{fill:none;stroke:var(--bg);stroke-width:1;opacity:.3;stroke-linecap:round}.albero .te{stroke:var(--line);stroke-width:1.5}
+.albero.anim .cr,.albero.anim .rd{stroke-dasharray:1;stroke-dashoffset:1;animation:cresci .7s ease-out forwards;animation-delay:var(--r)}
+.albero.anim .tr,.albero.anim .ve{transform-box:view-box;transform-origin:50% 50%;opacity:0;animation:sali .7s ease-out forwards}
+@keyframes cresci{to{stroke-dashoffset:0}}@keyframes sali{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.albero.anim .ve{animation-name:sali2}@keyframes sali2{to{opacity:.3}}
+@media(prefers-reduced-motion:reduce){.albero.anim *{animation:none!important;stroke-dashoffset:0!important;transform:none!important}}
 #ph .mt.big b{font-size:clamp(1rem,6.4cqi,1.35rem);-webkit-hyphens:manual;hyphens:manual;max-width:100%}
 #ph .mt.sm b{font-size:clamp(.72rem,3.4cqi,.85rem);max-width:100%}
 .cover img{width:100%;height:100%;object-fit:cover;display:block}
@@ -268,6 +275,7 @@ input:focus{outline:none;border-color:var(--acc)}
     <button class="mt sm" data-go="pm" style="--c:var(--t5)"><span class="mn" id="nMie"></span><svg data-i="calendario"></svg><b>Prenotazioni</b></button>
     <button class="mt sm" data-go="pp" style="--c:var(--t1)"><span class="mn" id="nAvv"></span><svg data-i="utente"></svg><b>Profilo</b></button>
    </div>
+   <div class="albero" id="albero" aria-hidden="true"></div>
   </div>
 
   <div id="pi" class="p" hidden><button class="ind" data-back>‹ Indietro</button>

@@ -161,7 +161,45 @@ function adattaTesti() {
   /* stessa grandezza per tutte le scritte dello stesso tipo di riquadro, la più piccola che serve */
   ['big', 'sm'].forEach(t => { const l = [...document.querySelectorAll('#ph .mt.' + t + ' b')], m = Math.min(...l.map(b => parseFloat(getComputedStyle(b).fontSize))); l.forEach(b => { b.style.fontSize = m + 'px'; }); });
 }
-addEventListener('resize', () => { if (PAG === 'ph') adattaTesti(); });
+addEventListener('resize', () => { if (PAG === 'ph') { adattaTesti(); disegnaAlbero(); } });
+/* ---------- l'albero della home: chioma sotto il menu, radici che scendono nella terra fino in fondo allo schermo.
+   Disegnato a caso ma sempre uguale (seme fisso) e adattato allo spazio libero; cresce con un'animazione la prima volta. ---------- */
+let alberoFatto = false, alberoMis = '';
+function disegnaAlbero() {
+  const el = $('albero'); if (!el || PAG !== 'ph') return;
+  const top = el.getBoundingClientRect().top + scrollY, W = Math.round(el.clientWidth), H = Math.min(620, Math.round(innerHeight - top - 14));
+  if (W + 'x' + H === alberoMis) return; alberoMis = W + 'x' + H;
+  if (H < 120 || W < 120) { el.innerHTML = ''; el.style.height = '0'; return; }
+  el.style.height = H + 'px';
+  let seme = 7; const rnd = () => { seme = (seme * 16807) % 2147483647; return (seme - 1) / 2147483646; };
+  const f = n => Math.round(n * 10) / 10, G = Math.round(H * .5), cx = W / 2, rami = [], radici = [], foglie = [], s = Math.min(W, H * 1.3) / 400;
+  const linea = (lista, cl, x, y, x2, y2, w, rit) => { const mx = (x + x2) / 2 + (rnd() - .5) * Math.hypot(x2 - x, y2 - y) * .35, my = (y + y2) / 2 + (rnd() - .5) * 8;
+    lista.push(`<path class="${cl}" pathLength="1" style="--r:${f(rit)}s" stroke-width="${f(w)}" d="M${f(x)} ${f(y)}Q${f(mx)} ${f(my)} ${f(x2)} ${f(y2)}"/>`); };
+  const radice = (x, y, ang, len, w, d, rit) => {
+    let dx = Math.cos(ang) * len, dy = Math.sin(ang) * len, t = 1;
+    if (y + dy > H - 4) t = Math.min(t, (H - 4 - y) / dy);
+    if (x + dx < 4) t = Math.min(t, (4 - x) / dx); if (x + dx > W - 4) t = Math.min(t, (W - 4 - x) / dx);
+    if (t < .25) return; const x2 = x + dx * t, y2 = y + dy * t;
+    linea(radici, 'rd', x, y, x2, y2, w, rit);
+    if (!d) return;
+    const n = d > 2 && rnd() < .35 ? 3 : 2;
+    for (let i = 0; i < n; i++) { let a = ang + (i - (n - 1) / 2) * (.45 + rnd() * .3) + (rnd() - .5) * .2; a = Math.max(.2, Math.min(Math.PI - .2, a)); radice(x2, y2, a, len * (.62 + rnd() * .14), Math.max(.7, w * .58), d - 1, rit + .3); }
+  };
+  /* tronco: sale dalla terra fino sotto il menu, si allarga alla base dove nascono le radici, con le venature della corteccia */
+  const wA = Math.max(14, Math.min(34, W * .075)), wB = wA * 1.35, wP = wA * 2.3, sh = (rnd() - .5) * Math.min(wA * .5, G * .06);
+  const xt = y => cx + Math.sin((1 - y / G) * Math.PI * 1.2) * sh;
+  const fianco = lato => { const pts = []; for (let i = 0; i <= 12; i++) { const y = G * i / 12, k = y / G, w = (wA + (wB - wA) * k + Math.pow(k, 4) * (wP - wB)) / 2; pts.push([xt(y) + lato * w, y]); } return pts; };
+  const sx = fianco(-1), dx = fianco(1).reverse(), pp = p => f(p[0]) + ' ' + f(p[1]);
+  const tronco = `M${pp(sx[0])}` + sx.slice(1).map(p => 'L' + pp(p)).join('') + `L${pp(dx[0])}` + dx.slice(1).map(p => 'L' + pp(p)).join('') + 'Z';
+  const vene = []; for (let i = 0; i < 4; i++) { const o = (i - 1.5) / 1.9, y0 = rnd() * G * .25, y1 = G * (.55 + rnd() * .4); let d = '';
+    for (let j = 0; j <= 10; j++) { const y = y0 + (y1 - y0) * j / 10, k = y / G, w = (wA + (wB - wA) * k) / 2; d += (j ? 'L' : 'M') + f(xt(y) + o * w * .8 + Math.sin(j * 1.7 + i) * 1.2) + ' ' + f(y); }
+    vene.push(`<path class="ve" d="${d}"/>`); }
+  rami.push(`<g mask="url(#sfuma)"><path class="tr" d="${tronco}" fill="var(--tronco)"/><path d="${tronco}" fill="url(#luce)" class="tr"/>${vene.join('')}</g>`);
+  [[Math.PI / 2, 1, 4, 0], [Math.PI / 2 - .55, .95, 4, -.5], [Math.PI / 2 + .55, .95, 4, .5], [.22, .8, 3, -1], [Math.PI - .22, .8, 3, 1]].forEach(([a, k, d, o], i) => radice(cx + o * wP * .3, G - 1, a, (H - G) * .42 * k, wA * .42 * k, d, .5 + i * .06));
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><defs><linearGradient id="sf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="${f(Math.min(.3, 70 / G))}" stop-color="#fff"/></linearGradient><mask id="sfuma" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="url(#sf)"/></mask><linearGradient id="luce" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".18"/><stop offset=".45" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient><radialGradient id="terra"><stop offset="0" stop-color="var(--soft)" stop-opacity=".95"/><stop offset="1" stop-color="var(--soft)" stop-opacity="0"/></radialGradient></defs><clipPath id="sotto"><rect x="0" y="${G}" width="${W}" height="${H - G}"/></clipPath><defs></defs>
+    <ellipse clip-path="url(#sotto)" cx="${cx}" cy="${G}" rx="${W / 2}" ry="${H - G}" fill="url(#terra)"/><line class="te" x1="8" y1="${G}" x2="${W - 8}" y2="${G}"/>${radici.join('')}${rami.join('')}</svg>`;
+  el.classList.toggle('anim', !alberoFatto && !matchMedia('(prefers-reduced-motion: reduce)').matches); alberoFatto = true;
+}
 function renderHome() {
   renderTesta();
   $('cover').querySelector('img')?.remove();
@@ -170,7 +208,7 @@ function renderHome() {
   $('hSub').textContent = C.sottotitolo || 'Prenota in pochi tocchi';
   const fut = MIE.filter(attiva).length; $('nMie').textContent = fut || ''; aggAvvisi();
   const ch = C.chiusure.find(c => c.a >= oggi()); $('nChiuso').textContent = ch ? '!' : '';
-  requestAnimationFrame(adattaTesti); if (document.fonts) document.fonts.ready.then(adattaTesti);
+  requestAnimationFrame(() => { adattaTesti(); disegnaAlbero(); }); if (document.fonts) document.fonts.ready.then(() => { adattaTesti(); disegnaAlbero(); });
 }
 function renderInfo() {
   $('iNome').textContent = C.nome;
