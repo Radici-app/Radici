@@ -82,8 +82,8 @@ jobs:
           echo "Manifest controllato: $m"
           test -n "$m"
           if grep -q REQUEST_INSTALL_PACKAGES "$m" || grep -q fileprovider "$m"; then echo "ERRORE: la versione store contiene l'aggiornamento automatico"; exit 1; fi
-          if unzip -p "$GITHUB_WORKSPACE/Radici-store.aab" 'base/dex/*.dex' | grep -a -q AggiornaPlugin; then echo "ERRORE: AggiornaPlugin nella versione store"; exit 1; fi
-          unzip -p "$GITHUB_WORKSPACE/Radici.apk" '*.dex' | grep -a -q AggiornaPlugin || { echo "ERRORE: manca AggiornaPlugin nell'APK di GitHub"; exit 1; }
+          if unzip -p "$GITHUB_WORKSPACE/Radici-store.aab" 'base/dex/*.dex' | grep -a -q 'Lit/radiciapp/prenota/AggiornaPlugin;'; then echo "ERRORE: AggiornaPlugin nella versione store"; exit 1; fi
+          unzip -p "$GITHUB_WORKSPACE/Radici.apk" '*.dex' | grep -a -q 'Lit/radiciapp/prenota/AggiornaPlugin;' || { echo "ERRORE: manca AggiornaPlugin nell'APK di GitHub"; exit 1; }
           echo "OK: niente permesso di installazione, niente FileProvider, niente AggiornaPlugin"
           { echo "### Versione per Google Play"; echo "versionCode ${{ github.run_number }}, versionName 1.${{ github.run_number }}"; echo "Scarica l'artifact **Radici-aab-per-Google-Play** e caricalo nella Play Console."; } >> "$GITHUB_STEP_SUMMARY"
 
