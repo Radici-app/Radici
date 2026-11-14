@@ -37,7 +37,7 @@ let sel = [], staffSel = 'any', giorno = null, ora = null, mese = null;
 let prCfg = false, prAuth = false;
 const prova = () => { if (prCfg && prAuth && window.splashPronto) window.splashPronto(); };
 onSnapshot(doc(db, 'saloni', SALONE), s => { if (s.exists()) { C = Object.assign(cp(window.RADICI_SEED), window.fasceDaDb(s.data())); window.splashDati && window.splashDati(C); sel = sel.filter(id => serv(id)); ridisegna(); } prCfg = true; prova(); }, () => { prCfg = true; prova(); });
-/* orari occupati: si scaricano solo quando il cliente sceglie giorno e ora, e solo per il mese che sta guardando */
+/* orari occupati: si scaricano solo per il giorno che il cliente tocca (il calendario usa solo gli orari del salone) */
 let unsubBusy = null, busyChiave = '';
 function seguiBusy(da, a) {
   if (giorno && giorno < da) da = giorno; if (giorno && giorno > a) a = giorno;
@@ -272,7 +272,6 @@ function renderGiorni() {
   const t = new Date(); if (!mese) mese = { y: t.getFullYear(), m: t.getMonth() };
   const max = new Date(); max.setDate(max.getDate() + C.regole.giorniMax);
   const f = new Date(mese.y, mese.m, 1), off = (f.getDay() + 6) % 7, n = new Date(mese.y, mese.m + 1, 0).getDate();
-  seguiBusy(iso(f) < oggi() ? oggi() : iso(f), iso(new Date(mese.y, mese.m, n)));
   let g = ['L', 'M', 'M', 'G', 'V', 'S', 'D'].map(x => `<span class="wd">${x}</span>`).join('') + '<span></span>'.repeat(off);
   for (let d = 1; d <= n; d++) { const k = iso(new Date(mese.y, mese.m, d)); g += `<button data-k="${k}" ${giornoOk(k) ? '' : 'disabled'} aria-pressed="${giorno === k}">${d}</button>`; }
   const prevOff = mese.y * 12 + mese.m <= t.getFullYear() * 12 + t.getMonth(), nextOff = mese.y * 12 + mese.m >= max.getFullYear() * 12 + max.getMonth();
@@ -289,6 +288,7 @@ function orariLiberi(k) {
 }
 function renderSlots() {
   if (!giorno) { $('dSlots').innerHTML = ''; $('dMsg').textContent = 'Scegli un giorno.'; return; }
+  seguiBusy(giorno, giorno); /* orari occupati solo del giorno scelto */
   if (!busyOk) { $('dSlots').innerHTML = '<div class="spin"></div>'; return; }
   const l = orariLiberi(giorno);
   $('dSlots').innerHTML = l.map(m => `<button class="slot" data-m="${m}" aria-pressed="${ora === m}">${hm(m)}</button>`).join('');
