@@ -1,0 +1,85 @@
+# Compila l'app per iPhone su un Mac di GitHub.
+# Per ora è una build di VERIFICA, NON firmata: controlla che il progetto iOS si compili.
+# Quando l'account Apple Developer sarà attivo si aggiunge la firma e il caricamento su TestFlight
+# (vedi store/app-store/PASSI-QUANDO-APPLE-E-ATTIVO.md).
+name: App iPhone
+
+on:
+  push:
+    paths:
+      - 'index.html'
+      - 'app.js'
+      - 'seed.js'
+      - 'icone.js'
+      - 'manifest.webmanifest'
+      - '*.png'
+      - 'app-android/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Serve Xcode 16.3 o più recente (Swift 6.1) per i pacchetti di Firebase
+      - name: Scegli l'Xcode più recente
+        run: |
+          X=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$X"
+          xcodebuild -version
+
+      - name: Prepara l'app (copia il sito dentro l'app)
+        working-directory: app-android
+        run: |
+          npm ci --no-audit --no-fund
+          node copia-web.js
+          npx cap sync ios
+
+      - name: File di Firebase per iPhone (GoogleService-Info.plist)
+        working-directory: app-android/ios/App/App
+        run: |
+          if [ ! -f GoogleService-Info.plist ]; then
+            echo "::warning::Manca app-android/ios/App/App/GoogleService-Info.plist: uso un file finto, l'app compilata non funzionerebbe (va bene solo per la verifica)."
+            cat > GoogleService-Info.plist <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>REVERSED_CLIENT_ID</key><string>com.googleusercontent.apps.da-sostituire</string>
+            <key>BUNDLE_ID</key><string>it.radiciapp.prenota</string>
+            <key>PROJECT_ID</key><string>radici-app</string>
+          </dict></plist>
+          EOF
+          fi
+          # Accesso con Google: lo schema dei link di ritorno è il REVERSED_CLIENT_ID del file di Firebase
+          R=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" GoogleService-Info.plist)
+          /usr/libexec/PlistBuddy -c "Set :CFBundleURLTypes:0:CFBundleURLSchemes:0 $R" Info.plist
+          echo "Schema per l'accesso con Google: $R"
+
+      - name: Compila (senza firma)
+        working-directory: app-android/ios/App
+        run: |
+          set -o pipefail
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            MARKETING_VERSION=1.${{ github.run_number }} CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build | tee xcodebuild.log | grep -E "error:|warning: .*deprecated|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" xcodebuild.log
+          echo "### App iPhone compilata (verifica, non firmata) – versione 1.${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Registro della compilazione (se qualcosa va storto)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: registro-xcodebuild
+          path: app-android/ios/App/xcodebuild.log

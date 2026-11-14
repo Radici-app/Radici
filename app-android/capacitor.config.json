@@ -13,7 +13,8 @@
     "FirebaseAuthentication": {
       "skipNativeAuth": true,
       "providers": [
-        "google.com"
+        "google.com",
+        "apple.com"
       ]
     },
     "FirebaseMessaging": {
@@ -22,6 +23,31 @@
         "badge",
         "sound"
       ]
+    }
+  },
+  "ios": {
+    "backgroundColor": "#6E7A3C",
+    "contentInset": "never",
+    "scheme": "Radici"
+  },
+  "experimental": {
+    "ios": {
+      "spm": {
+        "swiftToolsVersion": "6.1",
+        "packageTraits": {
+          "@capacitor-firebase/authentication": [
+            "Google"
+          ]
+        },
+        "packageOptions": {
+          "@capacitor-firebase/authentication": {
+            "symlink": true
+          },
+          "@capacitor-firebase/messaging": {
+            "symlink": true
+          }
+        }
+      }
     }
   }
 }

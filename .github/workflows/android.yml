@@ -1,10 +1,13 @@
-# Compila l'app Android (APK) ogni volta che il sito o l'app cambiano sul ramo main.
-# L'APK firmato finisce nella pagina "Releases" del repository.
+# Compila l'app Android ogni volta che il sito o l'app cambiano.
+# Due versioni, stessa firma e stesso numero di versione (versionCode = numero della compilazione, sempre crescente):
+#  - "github": Radici.apk con aggiornamento automatico. Dal ramo main finisce nella pagina "Releases".
+#  - "store":  Radici-store.aab per Google Play, senza aggiornamento automatico. Si scarica dagli artifact
+#              della compilazione (Actions → la compilazione → "Radici-aab-per-Google-Play").
+# Sugli altri rami compila soltanto (verifica), senza pubblicare nulla.
 name: App Android
 
 on:
   push:
-    branches: [main]
     paths:
       - 'index.html'
       - 'app.js'
@@ -37,7 +40,7 @@ jobs:
           java-version: 21
 
       - name: Crea la chiave di firma (solo la prima volta)
-        if: env.RADICI_KEY_PASSWORD != ''
+        if: env.RADICI_KEY_PASSWORD != '' && github.ref == 'refs/heads/main'
         run: |
           if [ ! -f app-android/firma-app.p12 ]; then
             keytool -genkeypair -storetype PKCS12 -keystore app-android/firma-app.p12 -alias radici \
@@ -64,12 +67,25 @@ jobs:
           node copia-web.js
           npx cap sync android
 
-      - name: Compila l'APK
+      - name: Compila l'APK (GitHub) e l'AAB (Google Play)
         working-directory: app-android/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon --stacktrace
-          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/Radici.apk"
+          ./gradlew assembleGithubRelease bundleStoreRelease --no-daemon --stacktrace
+          cp app/build/outputs/apk/github/release/app-github-release.apk "$GITHUB_WORKSPACE/Radici.apk"
+          cp app/build/outputs/bundle/storeRelease/app-store-release.aab "$GITHUB_WORKSPACE/Radici-store.aab"
+
+      - name: Controlla che la versione per Google Play non abbia l'aggiornamento automatico
+        working-directory: app-android/android/app/build
+        run: |
+          m=$(find intermediates -path '*storeRelease*' -name AndroidManifest.xml | grep -i merged | head -1)
+          echo "Manifest controllato: $m"
+          test -n "$m"
+          if grep -q REQUEST_INSTALL_PACKAGES "$m" || grep -q fileprovider "$m"; then echo "ERRORE: la versione store contiene l'aggiornamento automatico"; exit 1; fi
+          if unzip -p "$GITHUB_WORKSPACE/Radici-store.aab" 'base/dex/*.dex' | grep -a -q AggiornaPlugin; then echo "ERRORE: AggiornaPlugin nella versione store"; exit 1; fi
+          unzip -p "$GITHUB_WORKSPACE/Radici.apk" '*.dex' | grep -a -q AggiornaPlugin || { echo "ERRORE: manca AggiornaPlugin nell'APK di GitHub"; exit 1; }
+          echo "OK: niente permesso di installazione, niente FileProvider, niente AggiornaPlugin"
+          { echo "### Versione per Google Play"; echo "versionCode ${{ github.run_number }}, versionName 1.${{ github.run_number }}"; echo "Scarica l'artifact **Radici-aab-per-Google-Play** e caricalo nella Play Console."; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Salva l'APK tra i file della compilazione
         uses: actions/upload-artifact@v4
@@ -77,8 +93,15 @@ jobs:
           name: Radici-apk
           path: Radici.apk
 
+      - name: Salva l'AAB per Google Play tra i file della compilazione
+        uses: actions/upload-artifact@v4
+        with:
+          name: Radici-aab-per-Google-Play
+          path: Radici-store.aab
+          retention-days: 90
+
       - name: Pubblica l'APK firmato in Releases
-        if: env.RADICI_KEY_PASSWORD != ''
+        if: env.RADICI_KEY_PASSWORD != '' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: app-v1.${{ github.run_number }}

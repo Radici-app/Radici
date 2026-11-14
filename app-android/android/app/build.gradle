@@ -30,6 +30,18 @@ android {
             }
         }
     }
+    // Due versioni dell'app, stesso identificativo e stessa firma:
+    //  - "github": l'APK delle Releases, con aggiornamento automatico (plugin Aggiorna, permesso di installare pacchetti)
+    //  - "store":  per Google Play (file AAB), senza aggiornamento fatto in casa: si aggiorna dal Play Store
+    flavorDimensions = ["distribuzione"]
+    productFlavors {
+        github {
+            dimension "distribuzione"
+        }
+        store {
+            dimension "distribuzione"
+        }
+    }
     buildTypes {
         release {
             signingConfig pw ? signingConfigs.firma : signingConfigs.debug

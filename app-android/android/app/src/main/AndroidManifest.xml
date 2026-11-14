@@ -29,20 +29,10 @@
         <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/notifica" />
         <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="promemoria" />
 
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"></meta-data>
-        </provider>
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Per installare gli aggiornamenti scaricati dall'app -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Permesso e FileProvider per l'aggiornamento automatico: solo nella versione "github" (src/github/AndroidManifest.xml) -->
 </manifest>
