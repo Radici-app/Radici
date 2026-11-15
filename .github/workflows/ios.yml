@@ -1,7 +1,9 @@
 # Compila l'app per iPhone su un Mac di GitHub.
-# Per ora è una build di VERIFICA, NON firmata: controlla che il progetto iOS si compili.
-# Quando l'account Apple Developer sarà attivo si aggiunge la firma e il caricamento su TestFlight
-# (vedi store/app-store/PASSI-QUANDO-APPLE-E-ATTIVO.md).
+#  - Sempre: build di VERIFICA non firmata (controlla che il progetto si compili).
+#  - Solo dal ramo main e solo se ci sono i segreti di Apple (APPSTORE_API_KEY_ID, APPSTORE_API_ISSUER_ID,
+#    APPSTORE_API_KEY_P8, APPLE_TEAM_ID): build FIRMATA e caricata su App Store Connect / TestFlight.
+#    La firma è automatica: con la chiave API Xcode crea e rinnova da solo certificato e profilo.
+#    Vedi store/app-store/PASSI-QUANDO-APPLE-E-ATTIVO.md, sezione E.
 name: App iPhone
 
 on:
@@ -23,6 +25,11 @@ permissions:
 jobs:
   ios:
     runs-on: macos-15
+    env:
+      ASC_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.APPSTORE_API_KEY_P8 }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -77,9 +84,62 @@ jobs:
           grep -q "BUILD SUCCEEDED" xcodebuild.log
           echo "### App iPhone compilata (verifica, non firmata) – versione 1.${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
 
+      # ---------- Build firmata per TestFlight (si attiva da sola quando ci sono i segreti di Apple) ----------
+      - name: Chiave API di App Store Connect
+        if: github.ref == 'refs/heads/main' && env.ASC_KEY_ID != '' && env.ASC_ISSUER_ID != '' && env.ASC_KEY_P8 != '' && env.APPLE_TEAM_ID != ''
+        run: |
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8"
+          echo "FIRMA=1" >> "$GITHUB_ENV"
+
+      - name: Archivia e firma
+        if: env.FIRMA == '1'
+        working-directory: app-android/ios/App
+        run: |
+          set -o pipefail
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Radici.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            MARKETING_VERSION=1.${{ github.run_number }} CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            archive | tee archive.log | grep -E "error:|ARCHIVE (SUCCEEDED|FAILED)" || true
+          grep -q "ARCHIVE SUCCEEDED" archive.log
+
+      - name: Carica su App Store Connect (TestFlight)
+        if: env.FIRMA == '1'
+        working-directory: app-android/ios/App
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Radici.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          { echo "### Caricata su TestFlight: versione 1.${{ github.run_number }} (build ${{ github.run_number }})"; echo "Tra 10-30 minuti la trovi in App Store Connect → TestFlight."; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Cancella la chiave API dal Mac
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/asc"
+
       - name: Registro della compilazione (se qualcosa va storto)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: registro-xcodebuild
-          path: app-android/ios/App/xcodebuild.log
+          path: app-android/ios/App/*.log

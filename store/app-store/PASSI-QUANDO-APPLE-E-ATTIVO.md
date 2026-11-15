@@ -37,13 +37,15 @@ Servono 3 cose come **segreti GitHub** (repository Radici → Settings → Secre
 
 | Segreto | Cos'è | Come ottenerlo |
 |---|---|---|
-| `APPSTORE_API_KEY_ID` | Key ID della chiave API | App Store Connect → Utenti e accesso → **Integrazioni** → App Store Connect API → Chiavi del team → `+` (nome `GitHub`, accesso **App Manager**) |
+| `APPSTORE_API_KEY_ID` | Key ID della chiave API | App Store Connect → Utenti e accesso → **Integrazioni** → App Store Connect API → Chiavi del team → `+` (nome `GitHub`, accesso **Amministratore** – serve perché Xcode possa creare da solo il certificato di distribuzione) |
 | `APPSTORE_API_ISSUER_ID` | Issuer ID | stessa pagina, in alto |
 | `APPSTORE_API_KEY_P8` | contenuto del file `AuthKey_XXXX.p8` | si scarica una volta sola dalla stessa pagina; apri il file con un editor di testo e incolla tutto, comprese le righe BEGIN/END |
 | `APPLE_TEAM_ID` | Team ID (10 caratteri) | developer.apple.com → Membership |
 
 Con la chiave API, Xcode su GitHub crea e rinnova **da solo** certificato di distribuzione e profilo (firma automatica, `-allowProvisioningUpdates`): non serve un Mac né esportare certificati .p12.
-**(Claude)**: aggiungo al workflow `ios.yml` i passi `xcodebuild archive` + `-exportArchive` (metodo app-store-connect) + caricamento su TestFlight, con numero di build = numero della compilazione.
+✅ Il workflow `ios.yml` è già pronto: appena i 4 segreti esistono, ogni compilazione dal ramo `main` viene **firmata e caricata su TestFlight** da sola (numero di build = numero della compilazione). Per farla partire subito: Actions → "App iPhone" → Run workflow sul ramo main.
+
+**(io)** Prima del primo caricamento l'app deve già esistere in App Store Connect (sezione D).
 
 ## F. TestFlight e invio in revisione
 1. **(io)** Dopo il primo caricamento (10-30 minuti di elaborazione) la build compare in App Store Connect → TestFlight. Aggiungi te stessa come tester interno e prova l'app sul tuo iPhone con l'app TestFlight.
