@@ -61,8 +61,8 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
-	<!-- Accesso con Google: il valore REVERSED_CLIENT_ID di GoogleService-Info.plist.
-	     Lo scrive da solo il workflow .github/workflows/ios.yml leggendo GoogleService-Info.plist. -->
+	<!-- Accesso con Google: il valore REVERSED_CLIENT_ID di GoogleService-Info.plist
+	     (il workflow .github/workflows/ios.yml lo ricontrolla e lo riscrive a ogni compilazione). -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -72,7 +72,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>REVERSED_CLIENT_ID</string>
+				<string>com.googleusercontent.apps.602201707324-5dar73176sevl5gj0rdgjgoan1u43hjh</string>
 			</array>
 		</dict>
 	</array>
