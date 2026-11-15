@@ -17,7 +17,11 @@ Per arrivare su TestFlight e sull'App Store servono i passi qui sotto. Quelli se
    - App Store ID: lascialo vuoto per ora.
 2. **(io)** Scarica **GoogleService-Info.plist** (salta gli altri passaggi della procedura guidata: SDK e codice sono già pronti).
 3. **(Claude)** Lo metto in `app-android/ios/App/App/GoogleService-Info.plist`. Il workflow legge da solo il `REVERSED_CLIENT_ID` e lo imposta per l'accesso con Google.
-4. **(io)** Firebase → Authentication → Metodo di accesso → **Apple** → Abilita (per l'app iOS non servono Service ID né chiave: basta abilitarlo e salvare).
+4. ✅ **(io)** Firebase → Authentication → Metodo di accesso → **Apple** → Abilita (per l'app iOS non servono Service ID né chiave: basta abilitarlo e salvare).
+5. **(io)** Revoca dell'accesso Apple quando un cliente cancella il profilo (lo chiede Apple):
+   - developer.apple.com → **Keys** → `+` → nome `Radici Sign in with Apple` → spunta **Sign in with Apple** → Configure → App ID `it.radiciapp.prenota` → Save → Register → **Download** del `.p8` (una volta sola). Annota il **Key ID**. (Si può usare anche la stessa chiave della sezione C, spuntando entrambe le voci.)
+   - Firebase → Authentication → Metodo di accesso → Apple → **Configurazione flusso codice**: ID team Apple, ID chiave, chiave privata (il contenuto del `.p8`) → Salva.
+   - **(Claude)** collego la revoca al tasto "Cancella profilo" dell'app su iPhone.
 
 ## C. Chiave APNs per le notifiche push (anche se oggi i promemoria sono spenti)
 1. **(io)** developer.apple.com → **Keys** → `+` → nome `Radici APNs` → spunta **Apple Push Notifications service (APNs)** → Continue → Register → **Download** del file `.p8` (si scarica una volta sola: conservalo). Annota il **Key ID**.
