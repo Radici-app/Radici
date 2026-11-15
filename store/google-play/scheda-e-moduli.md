@@ -87,6 +87,7 @@ Scegli: **"Tutte le funzionalità o alcune sono soggette a restrizioni"** → **
 - Password: *(la sua password)*
 - Altre informazioni:
 ```
+App ufficiale del salone "Radici – Ambito Hair Studio", basata sulla piattaforma di prenotazione Radix Salon di Eurogestion S.A.S. (https://eurogestionradix.it): prenotazioni, agenda dello staff, Fidelity Card e avvisi sono gestiti dal salone in tempo reale tramite il gestionale Radix Salon.
 L'app si apre senza accesso: home, informazioni del salone, listino e scelta dei servizi sono liberi.
 L'accesso serve per confermare una prenotazione, vedere "Prenotazioni", "Profilo" e "Fidelity Card".
 Per accedere: tocca "Accedi" in alto a destra, spunta la casella dei Termini e della Privacy, inserisci email e password qui sopra e tocca "Accedi".

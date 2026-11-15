@@ -95,7 +95,7 @@ Tracciamento: **No** (nessuna pubblicità, nessuna condivisione con broker di da
 
 ### Note per il revisore (in inglese, così la revisione è più rapida)
 ```
-Radici is the official booking app of the hair salon "Radici – Ambito Hair Studio" (Italy). The app is in Italian.
+Radici is the official booking app of the hair salon "Radici – Ambito Hair Studio" (Italy), built on the Radix Salon booking platform by Eurogestion S.A.S. (https://eurogestionradix.it). Bookings, staff schedules, loyalty card and salon news are managed by the salon in real time through the Radix Salon management dashboard. The app is in Italian.
 
 Without signing in you can browse the home screen, salon information (Informazioni negozio), the price list (Listino) and choose services (Nuova prenotazione).
 Signing in is required only to confirm a booking and to see "Prenotazioni" (bookings), "Profilo" (profile) and "Fidelity Card".
