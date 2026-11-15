@@ -10,7 +10,7 @@ Per arrivare su TestFlight e sull'App Store servono i passi qui sotto. Quelli se
    - Capabilities da spuntare: **Push Notifications**, **Sign in with Apple**.
 2. **(io)** Annota il tuo **Team ID** (in alto a destra o in Membership): servirà per la firma.
 
-## B. Firebase: app iOS e file GoogleService-Info.plist
+## B. Firebase: app iOS e file GoogleService-Info.plist – ✅ punti 1-3 fatti
 1. **(io)** Firebase Console → progetto **radici-app** → ⚙ Impostazioni progetto → **Aggiungi app** → icona Apple (iOS).
    - ID pacchetto Apple: `it.radiciapp.prenota`
    - Nickname: `Radici iPhone`
@@ -49,5 +49,5 @@ Con la chiave API, Xcode su GitHub crea e rinnova **da solo** certificato di dis
 ## Da sapere
 - Su iPhone non c'è nessun aggiornamento "fatto in casa" né alcun link all'APK: l'app si aggiorna solo dall'App Store.
 - La domanda "Vuoi un promemoria?" e il tasto Notifiche sono nascosti finché `PROMEMORIA_ATTIVI` in `app.js` è `false`.
-- Senza GoogleService-Info.plist vero l'app compilata si chiuderebbe all'avvio: per questo oggi la build è solo di verifica.
+- La build di oggi è non firmata: compila con il GoogleService-Info.plist vero, ma si può installare solo dopo la firma (sezione E).
 - Nella privacy (gestionale → testi legali) aggiungi "con Apple" accanto a "con Google" dove si parla dell'accesso.

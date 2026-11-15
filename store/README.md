@@ -47,13 +47,13 @@ I promemoria push sono spenti: in `app.js` c'è `const PROMEMORIA_ATTIVI = false
 ## 2. Apple App Store
 1. **Iscrizione all'Apple Developer Program** come **Organizzazione** (99 $/anno): https://developer.apple.com/programs/enroll/ – serve l'Apple ID di chi rappresenta Eurogestion, il D-U-N-S, il sito web e un'email di dominio aziendale se possibile. Apple telefona per verificare: 1-2 settimane.
 2. Quando è attivo, segui **`app-store/PASSI-QUANDO-APPLE-E-ATTIVO.md`** (Identificativo app, Firebase iOS e GoogleService-Info.plist, chiave APNs, App Store Connect, segreti GitHub per TestFlight).
-3. Mandami **GoogleService-Info.plist** e, quando li hai salvati come segreti GitHub, dimmelo: preparo la build firmata e il caricamento su TestFlight.
+3. `GoogleService-Info.plist` è già nel progetto. Quando li hai salvati come segreti GitHub, dimmelo: preparo la build firmata e il caricamento su TestFlight.
 4. Prova da TestFlight, compila scheda/privacy/note con `app-store/scheda-e-revisione.md` e invia in revisione.
 
 ## 3. Firebase – riepilogo
 - [ ] SHA-1 e SHA-256 della **chiave di firma di Google Play** nell'app Android (dopo il primo caricamento su Play).
 - [ ] Nuovo `google-services.json` nel repository dopo aver aggiunto le impronte.
-- [ ] App iOS `it.radiciapp.prenota` → `GoogleService-Info.plist` nel repository.
+- [x] App iOS `it.radiciapp.prenota` → `GoogleService-Info.plist` nel repository (fatto).
 - [ ] Authentication → provider **Apple** abilitato.
 - [ ] Cloud Messaging → chiave **APNs** caricata.
 - [ ] Authentication → Impostazioni → Domini autorizzati: `radici-app.github.io` presente (già usato oggi dal sito).
