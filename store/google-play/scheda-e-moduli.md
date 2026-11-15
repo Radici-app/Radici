@@ -83,7 +83,7 @@ URL: `https://radici-app.github.io/Radici/privacy.html`
 Scegli: **"Tutte le funzionalità o alcune sono soggette a restrizioni"** → **Aggiungi istruzioni**.
 
 - Nome: `Account di prova per la revisione`
-- Nome utente / email: `revisore@eurogestionradix.it`
+- Nome utente / email: `info@eurogestionradix.it`
 - Password: *(la sua password)*
 - Altre informazioni:
 ```

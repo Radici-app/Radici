@@ -89,7 +89,7 @@ Tracciamento: **No** (nessuna pubblicità, nessuna condivisione con broker di da
 ## 3. Informazioni per la revisione (App Review Information)
 
 - **Accesso richiesto: Sì**
-- Nome utente: `revisore@eurogestionradix.it`
+- Nome utente: `info@eurogestionradix.it`
 - Password: *(password dell'account di prova)*
 - Contatto: nome, telefono ed email di chi segue la pubblicazione
 
