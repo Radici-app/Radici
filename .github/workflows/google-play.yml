@@ -1,0 +1,72 @@
+# Google Play da GitHub, con l'account di servizio github-play@radici-play.iam.gserviceaccount.com
+# (chiave JSON nel segreto PLAY_SERVICE_ACCOUNT_JSON, permessi solo sull'app Radici).
+# Si avvia a mano: Actions → "Google Play" → Run workflow → scegli l'azione.
+#  - stato: mostra le versioni e lo stato di ogni canale (produzione, test interno, ...). Non cambia niente.
+# Il repository è pubblico: il riepilogo mostra solo versioni e stati, mai dati riservati.
+name: Google Play
+
+on:
+  workflow_dispatch:
+    inputs:
+      azione:
+        description: Cosa fare
+        type: choice
+        options:
+          - stato
+        default: stato
+
+permissions:
+  contents: read
+
+jobs:
+  play:
+    runs-on: ubuntu-latest
+    env:
+      PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+      PACCHETTO: it.radiciapp.prenota
+    steps:
+      - name: Controlla il segreto
+        run: |
+          if [ -z "$PLAY_JSON" ]; then echo "Manca il segreto PLAY_SERVICE_ACCOUNT_JSON"; exit 1; fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Librerie Google
+        run: pip install --quiet google-api-python-client google-auth
+
+      - name: Stato dei canali
+        if: inputs.azione == 'stato'
+        shell: python
+        run: |
+          import json, os
+          from google.oauth2 import service_account
+          from googleapiclient.discovery import build
+          cred = service_account.Credentials.from_service_account_info(
+              json.loads(os.environ["PLAY_JSON"]),
+              scopes=["https://www.googleapis.com/auth/androidpublisher"])
+          api = build("androidpublisher", "v3", credentials=cred, cache_discovery=False)
+          pkg = os.environ["PACCHETTO"]
+          edit = api.edits().insert(packageName=pkg, body={}).execute()
+          try:
+              tracks = api.edits().tracks().list(packageName=pkg, editId=edit["id"]).execute().get("tracks", [])
+          finally:
+              api.edits().delete(packageName=pkg, editId=edit["id"]).execute()
+          nomi = {"production": "Produzione", "internal": "Test interno", "alpha": "Test chiuso", "beta": "Test aperto"}
+          stati = {"completed": "completata (100%)", "inProgress": "in corso (graduale)", "halted": "fermata",
+                   "draft": "bozza", "statusUnspecified": "non specificato"}
+          righe = ["### Google Play – " + pkg, "", "| Canale | Release | Versioni | Stato | Quota |", "|---|---|---|---|---|"]
+          for t in tracks:
+              rel = t.get("releases", []) or [{}]
+              for r in rel:
+                  quota = r.get("userFraction")
+                  righe.append("| {} | {} | {} | {} | {} |".format(
+                      nomi.get(t["track"], t["track"]), r.get("name", "–"),
+                      ", ".join(r.get("versionCodes", [])) or "–",
+                      stati.get(r.get("status", ""), r.get("status", "–")),
+                      f"{quota:.0%}" if quota else "–"))
+          testo = "\n".join(righe)
+          print(testo)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write(testo + "\n\n_Lo stato di revisione di Google non è visibile dall'API: si vede nella Play Console._\n")
