@@ -6,6 +6,10 @@
 name: Google Play
 
 on:
+  # Prova automatica (solo "stato") quando cambia questo file
+  push:
+    paths:
+      - '.github/workflows/google-play.yml'
   workflow_dispatch:
     inputs:
       azione:
@@ -37,7 +41,7 @@ jobs:
         run: pip install --quiet google-api-python-client google-auth
 
       - name: Stato dei canali
-        if: inputs.azione == 'stato'
+        if: github.event_name == 'push' || inputs.azione == 'stato'
         shell: python
         run: |
           import json, os
