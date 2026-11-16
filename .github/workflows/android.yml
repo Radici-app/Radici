@@ -100,6 +100,13 @@ jobs:
           path: Radici-store.aab
           retention-days: 90
 
+      - name: Salva il file di deoffuscamento (mapping.txt) per Google Play
+        uses: actions/upload-artifact@v4
+        with:
+          name: Radici-mapping-per-Google-Play
+          path: app-android/android/app/build/outputs/mapping/storeRelease/mapping.txt
+          retention-days: 90
+
       - name: Pubblica l'APK firmato in Releases
         if: env.RADICI_KEY_PASSWORD != '' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
