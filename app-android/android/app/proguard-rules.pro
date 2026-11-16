@@ -29,6 +29,9 @@
 # --- Plugin Capacitor usati dall'app (Firebase Authentication/Messaging, App) ---
 -keep class io.capawesome.capacitorjs.plugins.** { *; }
 -keep class com.capacitorjs.plugins.** { *; }
+# Il plugin di accesso supporta anche Facebook, Play Giochi ecc., che l'app non usa (librerie non incluse)
+-dontwarn com.facebook.**
+-dontwarn com.google.android.gms.games.**
 
 # --- Accesso con Google (Credential Manager): il provider di Play Services è caricato per riflessione ---
 -if class androidx.credentials.CredentialManager
