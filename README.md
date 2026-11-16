@@ -1,5 +1,7 @@
 # Radici – app clienti
 
+> 📘 **Guida completa da zero** (sistema, store, GitHub, come lavorare con Claude): [GUIDA.md](GUIDA.md)
+
 - Sito (anche per iPhone): https://radici-app.github.io/Radici/
 - App Android: https://github.com/Radici-app/Radici/releases/latest/download/Radici.apk
 - La cartella `app-android/` racchiude lo stesso sito in un'app Android (Capacitor). A ogni modifica su `main`, GitHub Actions ("App Android") compila l'APK e lo pubblica in Releases.
