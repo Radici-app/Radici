@@ -1,7 +1,11 @@
 # Google Play da GitHub, con l'account di servizio github-play@radici-play.iam.gserviceaccount.com
 # (chiave JSON nel segreto PLAY_SERVICE_ACCOUNT_JSON, permessi solo sull'app Radici).
 # Si avvia a mano: Actions → "Google Play" → Run workflow → scegli l'azione.
-#  - stato: mostra le versioni e lo stato di ogni canale (produzione, test interno, ...). Non cambia niente.
+#  - stato:                mostra versioni e stato di ogni canale. Non cambia niente.
+#  - carica-test-interno:  prende l'AAB di una compilazione "App Android" di main (l'ultima riuscita,
+#                          o quella indicata in "compilazione") e lo pubblica nel Test interno al 100%.
+#  - promuovi-produzione:  copia la versione del Test interno (o quella indicata in "versione") in Produzione
+#                          e la invia alla revisione di Google. Da usare SOLO dopo il "pubblica" del titolare.
 # Il repository è pubblico: il riepilogo mostra solo versioni e stati, mai dati riservati.
 name: Google Play
 
@@ -17,10 +21,29 @@ on:
         type: choice
         options:
           - stato
+          - carica-test-interno
+          - promuovi-produzione
         default: stato
+      compilazione:
+        description: "carica-test-interno: numero della compilazione App Android (vuoto = l'ultima riuscita su main)"
+        required: false
+        default: ''
+      versione:
+        description: "promuovi-produzione: versionCode da promuovere (vuoto = quella del Test interno)"
+        required: false
+        default: ''
+      note:
+        description: Note di rilascio (italiano)
+        required: false
+        default: Miglioramenti e correzioni
 
 permissions:
   contents: read
+  actions: read
+
+concurrency:
+  group: google-play
+  cancel-in-progress: false
 
 jobs:
   play:
@@ -28,10 +51,33 @@ jobs:
     env:
       PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
       PACCHETTO: it.radiciapp.prenota
+      AZIONE: ${{ github.event_name == 'push' && 'stato' || inputs.azione }}
+      COMPILAZIONE: ${{ inputs.compilazione }}
+      VERSIONE: ${{ inputs.versione }}
+      NOTE: ${{ inputs.note || 'Miglioramenti e correzioni' }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Controlla il segreto
         run: |
           if [ -z "$PLAY_JSON" ]; then echo "Manca il segreto PLAY_SERVICE_ACCOUNT_JSON"; exit 1; fi
+          echo "Azione: $AZIONE"
+
+      - name: Scarica l'AAB dalla compilazione App Android
+        if: env.AZIONE == 'carica-test-interno'
+        run: |
+          set -e
+          if [ -n "$COMPILAZIONE" ]; then
+            id=$(gh run list -R "$GITHUB_REPOSITORY" --workflow android.yml --branch main --limit 100 \
+                 --json databaseId,number,conclusion -q ".[] | select(.number == $COMPILAZIONE and .conclusion == \"success\") | .databaseId")
+          else
+            id=$(gh run list -R "$GITHUB_REPOSITORY" --workflow android.yml --branch main --status success --limit 1 \
+                 --json databaseId -q '.[0].databaseId')
+          fi
+          if [ -z "$id" ]; then echo "Nessuna compilazione App Android riuscita trovata su main"; exit 1; fi
+          echo "Compilazione: https://github.com/$GITHUB_REPOSITORY/actions/runs/$id"
+          gh run download "$id" -R "$GITHUB_REPOSITORY" -n Radici-aab-per-Google-Play -D aab
+          ls -la aab
+          test -f aab/Radici-store.aab
 
       - uses: actions/setup-python@v5
         with:
@@ -40,37 +86,86 @@ jobs:
       - name: Librerie Google
         run: pip install --quiet google-api-python-client google-auth
 
-      - name: Stato dei canali
-        if: github.event_name == 'push' || inputs.azione == 'stato'
+      - name: Google Play
         shell: python
         run: |
-          import json, os
+          import json, os, sys
           from google.oauth2 import service_account
           from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+
           cred = service_account.Credentials.from_service_account_info(
               json.loads(os.environ["PLAY_JSON"]),
               scopes=["https://www.googleapis.com/auth/androidpublisher"])
           api = build("androidpublisher", "v3", credentials=cred, cache_discovery=False)
-          pkg = os.environ["PACCHETTO"]
-          edit = api.edits().insert(packageName=pkg, body={}).execute()
+          pkg, azione, note = os.environ["PACCHETTO"], os.environ["AZIONE"], os.environ["NOTE"]
+          ed = api.edits()
+          riepilogo = []
+
+          def scrivi(t=""):
+              print(t); riepilogo.append(t)
+
+          def tabella(tracks):
+              nomi = {"production": "Produzione", "internal": "Test interno", "alpha": "Test chiuso", "beta": "Test aperto"}
+              stati = {"completed": "completata (100%)", "inProgress": "in corso (graduale)", "halted": "fermata",
+                       "draft": "bozza", "statusUnspecified": "non specificato"}
+              scrivi("| Canale | Release | Versioni | Stato | Quota |"); scrivi("|---|---|---|---|---|")
+              for t in tracks:
+                  for r in (t.get("releases") or [{}]):
+                      q = r.get("userFraction")
+                      scrivi("| {} | {} | {} | {} | {} |".format(
+                          nomi.get(t["track"], t["track"]), r.get("name", "–"),
+                          ", ".join(r.get("versionCodes", [])) or "–",
+                          stati.get(r.get("status", ""), r.get("status", "–")), f"{q:.0%}" if q else "–"))
+
+          edit = ed.insert(packageName=pkg, body={}).execute()["id"]
+          committed = False
           try:
-              tracks = api.edits().tracks().list(packageName=pkg, editId=edit["id"]).execute().get("tracks", [])
+              if azione == "carica-test-interno":
+                  media = MediaFileUpload("aab/Radici-store.aab", mimetype="application/octet-stream", resumable=True)
+                  b = ed.bundles().upload(packageName=pkg, editId=edit, media_body=media).execute()
+                  vc = str(b["versionCode"])
+                  scrivi(f"### Caricata la versione {vc} nel Test interno")
+                  ed.tracks().update(packageName=pkg, editId=edit, track="internal", body={
+                      "track": "internal",
+                      "releases": [{"name": f"{vc} (1.{vc})", "versionCodes": [vc], "status": "completed",
+                                    "releaseNotes": [{"language": "it-IT", "text": note}]}]}).execute()
+                  ed.commit(packageName=pkg, editId=edit).execute(); committed = True
+                  scrivi("Disponibile per i tester tra pochi minuti (aggiorna dal Play Store). Nessuna revisione necessaria.")
+
+              elif azione == "promuovi-produzione":
+                  vc = os.environ.get("VERSIONE", "").strip()
+                  rel_int = ed.tracks().get(packageName=pkg, editId=edit, track="internal").execute().get("releases", [])
+                  if not vc:
+                      if not rel_int or not rel_int[0].get("versionCodes"):
+                          sys.exit("Nessuna versione nel Test interno da promuovere")
+                      vc = max(rel_int[0]["versionCodes"], key=int)
+                  prod = ed.tracks().get(packageName=pkg, editId=edit, track="production").execute().get("releases", [])
+                  attuale = max([int(c) for r in prod for c in r.get("versionCodes", [])] or [0])
+                  if int(vc) <= attuale:
+                      sys.exit(f"La versione {vc} non è più nuova di quella già in Produzione ({attuale}): niente da fare")
+                  note_int = next((r.get("releaseNotes") for r in rel_int if vc in r.get("versionCodes", [])), None)
+                  ed.tracks().update(packageName=pkg, editId=edit, track="production", body={
+                      "track": "production",
+                      "releases": [{"name": f"{vc} (1.{vc})", "versionCodes": [vc], "status": "completed",
+                                    "releaseNotes": note_int or [{"language": "it-IT", "text": note}]}]}).execute()
+                  ed.commit(packageName=pkg, editId=edit).execute(); committed = True
+                  scrivi(f"### Versione {vc} inviata in Produzione (100%)")
+                  scrivi("Ora è in revisione da Google; con la pubblicazione gestita disattivata uscirà da sola dopo l'approvazione.")
+
+              elif azione != "stato":
+                  sys.exit(f"Azione sconosciuta: {azione}")
           finally:
-              api.edits().delete(packageName=pkg, editId=edit["id"]).execute()
-          nomi = {"production": "Produzione", "internal": "Test interno", "alpha": "Test chiuso", "beta": "Test aperto"}
-          stati = {"completed": "completata (100%)", "inProgress": "in corso (graduale)", "halted": "fermata",
-                   "draft": "bozza", "statusUnspecified": "non specificato"}
-          righe = ["### Google Play – " + pkg, "", "| Canale | Release | Versioni | Stato | Quota |", "|---|---|---|---|---|"]
-          for t in tracks:
-              rel = t.get("releases", []) or [{}]
-              for r in rel:
-                  quota = r.get("userFraction")
-                  righe.append("| {} | {} | {} | {} | {} |".format(
-                      nomi.get(t["track"], t["track"]), r.get("name", "–"),
-                      ", ".join(r.get("versionCodes", [])) or "–",
-                      stati.get(r.get("status", ""), r.get("status", "–")),
-                      f"{quota:.0%}" if quota else "–"))
-          testo = "\n".join(righe)
-          print(testo)
+              if not committed:
+                  try: ed.delete(packageName=pkg, editId=edit).execute()
+                  except Exception: pass
+
+          lettura = ed.insert(packageName=pkg, body={}).execute()["id"]
+          try:
+              scrivi(""); scrivi(f"### Stato dei canali – {pkg}"); scrivi("")
+              tabella(ed.tracks().list(packageName=pkg, editId=lettura).execute().get("tracks", []))
+          finally:
+              ed.delete(packageName=pkg, editId=lettura).execute()
+          scrivi(""); scrivi("_Lo stato della revisione di Google non è visibile dall'API: si vede nella Play Console._")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
-              f.write(testo + "\n\n_Lo stato di revisione di Google non è visibile dall'API: si vede nella Play Console._\n")
+              f.write("\n".join(riepilogo) + "\n")
