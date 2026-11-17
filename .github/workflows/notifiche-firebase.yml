@@ -48,15 +48,18 @@ jobs:
       - name: Controlla la richiesta
         run: |
           echo "Azione: $AZIONE"
-          if [ -z "$FB_JSON" ]; then echo "::error::Manca il segreto FIREBASE_SERVICE_ACCOUNT_JSON"; exit 1; fi
+          if [ -z "$FB_JSON" ]; then
+            if [ "$AZIONE" = "installa" ]; then echo "::error::Manca il segreto FIREBASE_SERVICE_ACCOUNT_JSON"; exit 1; fi
+            echo "::warning::Manca il segreto FIREBASE_SERVICE_ACCOUNT_JSON: controllo solo il programma."
+          fi
           if [ "$AZIONE" = "installa" ] && [ "$GITHUB_REF" != "refs/heads/main" ]; then
             echo "::error::L'installazione si fa solo dal ramo main"; exit 1
           fi
 
       - name: Chiave e progetto Firebase
         run: |
-          printf '%s' "$FB_JSON" > "$RUNNER_TEMP/chiave.json"
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/chiave.json" >> "$GITHUB_ENV"
+          printf '%s' "${FB_JSON:-{\"project_id\":\"senza-chiave\"}}" > "$RUNNER_TEMP/chiave.json"
+          [ -n "$FB_JSON" ] && echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/chiave.json" >> "$GITHUB_ENV"
           P=$(node -e "
             const fs=require('fs');let p='';
             if(fs.existsSync('config.js')){global.window={};require('./config.js');p=(window.APP.firebase||{}).projectId||'';}
