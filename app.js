@@ -5,9 +5,9 @@ import { getFirestore, initializeFirestore, persistentLocalCache, persistentMult
 
 const VERSIONE = '1.0';
 const SALONE = 'radici';
-/* Promemoria con notifica push. Lasciare false finché il server delle notifiche (Firebase Blaze + Cloud Functions) non è attivo:
-   così l'app non chiede "Vuoi un promemoria?" e nel Profilo non compare il tasto Notifiche. Per riattivare tutto basta mettere true. */
-const PROMEMORIA_ATTIVI = false;
+/* Notifiche push: si accendono e si spengono dal gestionale → Notifiche push → "Invio notifiche attivo"
+   (campo notifiche.attive del salone, letto da Firebase). Finché è spento l'app non chiede "Vuoi un promemoria?"
+   e nel Profilo non compare il tasto Notifiche. Così non serve aggiornare l'app per attivarle. */
 const fbApp = initializeApp({ apiKey: 'AIzaSyCUhd6pXSheUQ6gPhT5OfvprM5dYI2uxz4', authDomain: 'radici-app.firebaseapp.com', projectId: 'radici-app', storageBucket: 'radici-app.firebasestorage.app', messagingSenderId: '602201707324', appId: '1:602201707324:web:88d8681280de279b81c439' });
 const auth = getAuth(fbApp);
 /* i dati letti restano salvati sul telefono: riaprendo l'app Firebase rimanda solo quello che è cambiato */
@@ -39,7 +39,7 @@ let BUSY = [], busyOk = false, utente = null, PROF = null, MIE = [], mieOk = fal
 let sel = [], staffSel = 'any', giorno = null, ora = null, mese = null;
 let prCfg = false, prAuth = false;
 const prova = () => { if (prCfg && prAuth && window.splashPronto) window.splashPronto(); };
-onSnapshot(doc(db, 'saloni', SALONE), s => { if (s.exists()) { C = Object.assign(cp(window.RADICI_SEED), window.fasceDaDb(s.data())); window.splashDati && window.splashDati(C); sel = sel.filter(id => serv(id)); ridisegna(); } prCfg = true; prova(); }, () => { prCfg = true; prova(); });
+onSnapshot(doc(db, 'saloni', SALONE), s => { if (s.exists()) { C = Object.assign(cp(window.RADICI_SEED), window.fasceDaDb(s.data())); window.splashDati && window.splashDati(C); sel = sel.filter(id => serv(id)); ridisegna(); if (window.aggiornaPush) window.aggiornaPush(); } prCfg = true; prova(); }, () => { prCfg = true; prova(); });
 /* orari occupati: si scaricano solo per il giorno che il cliente tocca (il calendario usa solo gli orari del salone) */
 let unsubBusy = null, busyChiave = '';
 function seguiBusy(da, a) {
@@ -473,7 +473,7 @@ onAuthStateChanged(auth, async u => {
     $('login').hidden = true;
     try { const d = await getDoc(doc(db, 'saloni', SALONE, 'clienti', u.uid)); if (d.exists()) PROF = d.data(); } catch (e) {}
     if (!PROF && u.displayName) { const p = u.displayName.split(' '); PROF = { nome: p[0], cogn: p.slice(1).join(' '), tel: '' }; }
-    setTimeout(() => { if (PROMEMORIA_ATTIVI && PROF && PROF.notifiche) attivaPush(false); }, 1500);
+    setTimeout(() => { if (PUSH && PROF && PROF.notifiche) attivaPush(false); }, 1500);
     unsubFid = onSnapshot(query(colF, where('uid', '==', u.uid)), s => { FMIE = s.docs.map(d => d.data()).filter(m => !m.annullato); fidOk = true; if (PAG === 'pf') renderFid(); }, () => { fidOk = true; if (PAG === 'pf') renderFid(); });
     unsubMie = onSnapshot(query(colP, where('uid', '==', u.uid)), s => { MIE = s.docs.map(d => d.data()); mieOk = true; if (PAG === 'pm' || PAG === 'ph') mostraP(PAG); }, () => { mieOk = true; });
   } else if (PAG === 'pm') { STORIA = ['ph']; }
@@ -536,7 +536,17 @@ if (!APP && 'serviceWorker' in navigator) addEventListener('load', () => navigat
 /* ---------- notifiche push (app Android e iPhone): promemoria degli appuntamenti e messaggi del salone.
    Le invia il server (Firebase Cloud Functions) secondo quanto deciso nella dashboard → Notifiche push.
    Qui l'app chiede il permesso, registra il telefono del cliente e apre la pagina giusta quando si tocca la notifica. ---------- */
-var PUSH = PROMEMORIA_ATTIVI && APP && window.Capacitor.Plugins ? window.Capacitor.Plugins.FirebaseMessaging || null : null;
+var PLUG = APP && window.Capacitor.Plugins ? window.Capacitor.Plugins.FirebaseMessaging || null : null;
+var PUSH = null, pushPronto = false;
+/* acceso/spento dal gestionale (C.notifiche.attive): si aggiorna da solo quando il titolare cambia l'interruttore */
+window.aggiornaPush = function () {
+  const on = !!(PLUG && C.notifiche && C.notifiche.attive === true);
+  if (on === !!PUSH) return;
+  PUSH = on ? PLUG : null;
+  if (PUSH && !pushPronto) { pushPronto = true; preparaPush(); }
+  aggNotifiche();
+  if (PUSH && utente && PROF && PROF.notifiche) attivaPush(false);
+};
 var pushToken = '';
 async function salvaDispositivo(t) {
   if (!utente || !t) return; pushToken = t;
@@ -576,7 +586,7 @@ async function proponiNotifiche() {
   if (ok) { const r = await attivaPush(true); if (r === 'si') toast('Perfetto, ti avviseremo'); aggNotifiche(); }
   else { try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), Object.assign({ agg: Date.now() }, { notifiche: false }), { merge: true }); PROF = Object.assign(PROF || {}, { notifiche: false }); } catch (e) {} aggNotifiche(); }
 }
-if (PUSH) {
+function preparaPush() {
   PUSH.createChannel({ id: 'promemoria', name: 'Promemoria appuntamenti', description: 'Avvisi prima dei tuoi appuntamenti', importance: 4, visibility: 1, vibration: true }).catch(() => {});
   PUSH.createChannel({ id: 'salone', name: 'Comunicazioni del salone', description: 'Novità, punti fedeltà e messaggi del salone', importance: 3, visibility: 1 }).catch(() => {});
   PUSH.addListener('tokenReceived', e => { if (utente && PROF && PROF.notifiche) salvaDispositivo(e.token); });
@@ -584,6 +594,7 @@ if (PUSH) {
   PUSH.addListener('notificationReceived', e => { const n = e.notification || {}; if (n.title || n.body) toast((n.title ? n.title + ' – ' : '') + (n.body || '')); });
   PUSH.addListener('notificationActionPerformed', e => { const d = (e.notification && e.notification.data) || {}; if (['pm', 'pa', 'pf', 'ph', 'p1', 'pi'].includes(d.pagina)) setTimeout(() => vai(d.pagina), 700); });
 }
+window.aggiornaPush();
 
 /* ---------- AGGIUNGI AL CALENDARIO (come nella vecchia app Nails & Makeup, già collaudato) ----------
    iPhone: file .ics aperto direttamente → si apre il Calendario dell'iPhone con data e ora già inserite (basta premere Aggiungi).
