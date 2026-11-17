@@ -1,0 +1,64 @@
+# Verifica della chiave per installare programmi su Firebase (segreto FIREBASE_SERVICE_ACCOUNT_JSON).
+# Controlla solo che la chiave esista, sia accettata da Google e abbia i permessi necessari: non cambia nulla.
+# Il repository è pubblico: il registro non mostra mai il contenuto della chiave.
+name: Verifica Firebase
+
+on:
+  push:
+    paths:
+      - '.github/workflows/verifica-firebase.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifica:
+    runs-on: ubuntu-latest
+    env:
+      FB_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Librerie Google
+        run: pip install --quiet google-auth requests
+      - name: FIREBASE_SERVICE_ACCOUNT_JSON
+        shell: python
+        run: |
+          import json, os, sys
+          out = []
+          def esito(t): print(t); out.append(t)
+          def fine():
+              with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f: f.write("### Verifica Firebase\n" + "\n".join(out) + "\n")
+              sys.exit(1 if any(t.startswith("❌") for t in out) else 0)
+          v = os.environ.get("FB_JSON", "")
+          if not v.strip(): esito("❌ Segreto FIREBASE_SERVICE_ACCOUNT_JSON assente o vuoto (controlla il nome)"); fine()
+          try: d = json.loads(v)
+          except Exception: esito("❌ Il segreto non è un JSON valido (incollato a metà?)"); fine()
+          if d.get("type") != "service_account" or not d.get("private_key"): esito("❌ Il JSON non è la chiave di un account di servizio"); fine()
+          prog = d.get("project_id", "")
+          esito(f"✅ Chiave valida dell'account {d.get('client_email','').split('@')[0]}, progetto {prog}")
+          from google.oauth2 import service_account
+          import google.auth.transport.requests as tr, requests
+          try:
+              c = service_account.Credentials.from_service_account_info(d, scopes=["https://www.googleapis.com/auth/cloud-platform"])
+              c.refresh(tr.Request())
+              esito("✅ Google accetta la chiave")
+          except Exception as e:
+              esito(f"❌ Google rifiuta la chiave ({type(e).__name__}): forse è stata revocata"); fine()
+          servono = {
+              "cloudfunctions.functions.create": "installare il programma (Cloud Functions)",
+              "iam.serviceAccounts.actAs": "far partire il programma (Service Account User)",
+              "serviceusage.services.enable": "attivare i servizi necessari (Editor)",
+              "datastore.entities.list": "leggere il database (Editor)",
+          }
+          r = requests.post(f"https://cloudresourcemanager.googleapis.com/v1/projects/{prog}:testIamPermissions",
+                            headers={"Authorization": "Bearer " + c.token}, json={"permissions": list(servono)}, timeout=30)
+          if r.status_code != 200:
+              esito(f"⚠️ Non riesco a leggere i permessi (risposta {r.status_code}): la chiave funziona, i permessi si vedranno all'installazione")
+          else:
+              ha = set(r.json().get("permissions", []))
+              for p, a in servono.items():
+                  esito(("✅ " if p in ha else "❌ Manca il permesso per ") + a)
+          fine()
