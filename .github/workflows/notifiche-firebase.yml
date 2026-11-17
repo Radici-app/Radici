@@ -58,8 +58,12 @@ jobs:
 
       - name: Chiave e progetto Firebase
         run: |
-          printf '%s' "${FB_JSON:-{\"project_id\":\"senza-chiave\"}}" > "$RUNNER_TEMP/chiave.json"
-          [ -n "$FB_JSON" ] && echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/chiave.json" >> "$GITHUB_ENV"
+          if [ -n "$FB_JSON" ]; then
+            printf '%s' "$FB_JSON" > "$RUNNER_TEMP/chiave.json"
+            echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/chiave.json" >> "$GITHUB_ENV"
+          else
+            echo '{"project_id":"senza-chiave"}' > "$RUNNER_TEMP/chiave.json"
+          fi
           P=$(node -e "
             const fs=require('fs');let p='';
             if(fs.existsSync('config.js')){global.window={};require('./config.js');p=(window.APP.firebase||{}).projectId||'';}
