@@ -309,6 +309,8 @@ window.FID = (() => {
 
 /* ---------- NOTIFICHE PUSH: cosa e quando inviare (dashboard → Notifiche push). Le invia il server (Cloud Functions). ---------- */
 window.RADICI_SEED.notifiche = {
+  /* interruttore generale: acceso dal gestionale solo quando il programma delle notifiche è installato */
+  attive: false,
   /* promemoria prima dell'appuntamento: "prima" in minuti */
   promemoria: [
     { id: 'r24', attivo: true, prima: 1440, titolo: 'Promemoria appuntamento', testo: 'Ciao {{nome}}, ti aspettiamo {{quando}} da {{salone}} per {{servizi}} con {{operatore}}.' },

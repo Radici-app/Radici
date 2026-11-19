@@ -30,11 +30,25 @@ android {
             }
         }
     }
+    // Due versioni dell'app, stesso identificativo e stessa firma:
+    //  - "github": l'APK delle Releases, con aggiornamento automatico (plugin Aggiorna, permesso di installare pacchetti)
+    //  - "store":  per Google Play (file AAB), senza aggiornamento fatto in casa: si aggiorna dal Play Store
+    flavorDimensions = ["distribuzione"]
+    productFlavors {
+        github {
+            dimension "distribuzione"
+        }
+        store {
+            dimension "distribuzione"
+        }
+    }
     buildTypes {
         release {
             signingConfig pw ? signingConfigs.firma : signingConfigs.debug
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Ottimizza e offusca il codice (R8): app più leggera e veloce, richiesto da Google Play.
+            // Le regole per Capacitor, Firebase e il plugin Aggiorna sono in proguard-rules.pro
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
