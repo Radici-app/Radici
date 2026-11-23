@@ -79,7 +79,7 @@ function vai(p) { if (p === 'ph') STORIA = ['ph']; else if (STORIA[STORIA.length
 function indietro() { if (STORIA.length > 1) history.back(); else mostraP('ph'); }
 addEventListener('popstate', () => { if (!$('viewer').hidden) { chiudiFoto(); return; } for (const id of ['calq', 'login', 'dlg', 'prof']) if (!$(id).hidden) { $(id).hidden = true; return; } if (STORIA.length > 1) { STORIA.pop(); mostraP(STORIA[STORIA.length - 1]); } });
 document.addEventListener('click', e => {
-  const g = e.target.closest('[data-go]'); if (g) { const p = g.dataset.go; if (p === 'pm' && !utente) { apriLogin(); return; } if (p === 'ph' || p === 'p1' && PAG === 'p5') STORIA = ['ph']; vai(p); return; }
+  const g = e.target.closest('[data-go]'); if (g) { const p = g.dataset.go; if ((p === 'pv' || p === 'pt') && apriLegale(p)) return; if (p === 'pm' && !utente) { apriLogin(); return; } if (p === 'ph' || p === 'p1' && PAG === 'p5') STORIA = ['ph']; vai(p); return; }
   if (e.target.closest('[data-back]')) indietro();
 });
 function ridisegna() { mostraP(PAG); }
@@ -395,6 +395,12 @@ function renderFid() {
    <h3 class="fh">I tuoi movimenti</h3>${M.length ? `<div class="row">${M.map(m => `<div class="fmv"><div><b>${TIPIF[m.tipo] || ''}</b><small>${new Date(m.data + 'T12:00').toLocaleDateString('it-IT')}${m.nota ? ' · ' + esc(m.nota) : ''}</small></div><span class="${m.punti < 0 ? 'meno' : ''}">${m.punti > 0 ? '+' : ''}${m.punti}</span></div>`).join('')}</div>` : '<p class="vuoto">Ancora nessun punto: li ricevi dopo ogni appuntamento in salone.</p>'}`;
 }
 const renderReg = () => { $('tReg').innerHTML = window.FID.html(fidCfg(), C, esc); };
+// Privacy e Termini si aprono direttamente sulla pagina web di Eurogestion (se c'è internet); senza rete si legge il testo nell'app
+const apriLegale = p => {
+  if (navigator.onLine === false) return false;
+  const a = document.createElement('a'); a.href = 'https://eurogestionradix.it/app/radici/' + (p === 'pv' ? 'privacy.html' : 'termini.html');
+  a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); return true;
+};
 const aggLegali = () => { $('tPriv').innerHTML = testoLegale(C.privacy || window.RADICI_SEED.privacy); $('tTerm').innerHTML = testoLegale(C.termini || window.RADICI_SEED.termini); };
 function renderProfilo() {
   ['pMod', 'pDel', 'pOut'].forEach(id => $(id).hidden = !utente); $('pIn').hidden = !!utente; $('pBenv').hidden = !!utente; document.querySelector('.pfoto').style.pointerEvents = utente ? '' : 'none'; document.querySelector('.pfoto .cam').hidden = !utente;
@@ -447,7 +453,7 @@ async function consenso() {
   await dialogo('Attenzione', 'Prima di poter proseguire devi dichiarare di aver preso visione dei termini del servizio e della privacy policy.', 'Ok');
   return false;
 }
-document.querySelectorAll('[data-leggi]').forEach(a => a.onclick = e => { e.preventDefault(); $('login').hidden = true; vai(a.dataset.leggi); });
+document.querySelectorAll('[data-leggi]').forEach(a => a.onclick = e => { e.preventDefault(); if (apriLegale(a.dataset.leggi)) return; $('login').hidden = true; vai(a.dataset.leggi); });
 $('lX').onclick = () => { $('login').hidden = true; };
 $('cBtn').onclick = () => utente ? signOut(auth) : apriLogin();
 const errAuth = e => ({ 'auth/invalid-credential': 'Email o password non corretti.', 'auth/wrong-password': 'Email o password non corretti.', 'auth/user-not-found': 'Email o password non corretti.', 'auth/invalid-email': 'Controlla l’indirizzo email.', 'auth/email-already-in-use': 'Esiste già un account con questa email: accedi.', 'auth/weak-password': 'La password deve avere almeno 6 caratteri.', 'auth/too-many-requests': 'Troppi tentativi: riprova tra qualche minuto.', 'auth/network-request-failed': 'Controlla la connessione e riprova.' })[e && e.code] || 'Operazione non riuscita. Riprova.';
