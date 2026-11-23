@@ -116,9 +116,9 @@ window.RADICI_SEED.privacy = `## Informativa sul trattamento dei dati personali
 Ai sensi degli articoli 13 e 14 del Regolamento (UE) 2016/679 ("GDPR") e del D.Lgs. 196/2003, come modificato dal D.Lgs. 101/2018, ti spieghiamo come trattiamo i tuoi dati quando usi l'app e il sito di prenotazione di {{nome}}.
 
 ## 1. Titolare del trattamento
-{{ragione}}, con sede in {{indirizzo}}, P.IVA {{piva}}.
-Email: {{email}} – Telefono: {{telefono}}.
-Sviluppatore dell'app e responsabile del trattamento: {{svil_nome}}, P.IVA {{svil_piva}}, con sede in {{svil_sede}} (email {{svil_email}}). {{svil_nome}} sviluppa e fornisce l'app e il sito di prenotazione, nell'ambito del servizio Radix Salon, per conto del Titolare. Tratta i dati personali solo per conto e secondo le istruzioni del Titolare, in base a un accordo scritto ai sensi dell'art. 28 GDPR, e non li usa per finalità proprie.
+{{svil_nome}}, con sede in {{svil_sede}}, P.IVA {{svil_piva}}. Email: {{svil_email}}.
+{{svil_nome}} sviluppa e gestisce l'app e il sito di prenotazione di {{nome}}, nell'ambito del servizio Radix Salon.
+{{nome}} (di seguito "il Salone") è l'attività presso cui prenoti: riceve i dati delle tue prenotazioni e del tuo profilo e li usa per eseguire i servizi richiesti e contattarti, come titolare autonomo per la gestione dei propri appuntamenti e clienti.
 
 ## 2. Quali dati trattiamo
 - Dati dell'account: nome, cognome, indirizzo email, numero di telefono e, se scegli di caricarla, la foto del profilo.
@@ -139,9 +139,8 @@ I tuoi dati non sono usati per pubblicità, non sono venduti e non sono oggetto 
 Nome, cognome, email e telefono sono necessari per prenotare: senza non è possibile fornire il servizio. La foto del profilo e le note sono facoltative.
 
 ## 5. Come trattiamo i dati e chi li riceve
-I dati sono trattati con strumenti elettronici e misure di sicurezza adeguate. Possono accedervi solo il Titolare e il personale del salone autorizzato.
+I dati sono trattati con strumenti elettronici e misure di sicurezza adeguate. Possono accedervi il Titolare e il personale del Salone autorizzato. Il Salone usa i dati solo per gestire i tuoi appuntamenti, la Fidelity Card e gli avvisi.
 Per far funzionare l'app ci serviamo di fornitori che agiscono come responsabili del trattamento:
-- {{svil_nome}} (P.IVA {{svil_piva}}), sviluppatore dell'app e del sito di prenotazione, che li gestisce per conto del Titolare nell'ambito del servizio Radix Salon, con accesso ai dati solo per manutenzione e assistenza.
 - Google Ireland Limited (Google Firebase): autenticazione e archiviazione dei dati. Il database si trova in data center dell'Unione Europea.
 - GitHub, Inc.: pubblicazione del sito e dei file dell'app, con registri tecnici di accesso.
 Alcuni fornitori potrebbero trattare dati anche fuori dall'Unione Europea. In questo caso il trasferimento avviene nel rispetto del GDPR, sulla base del Data Privacy Framework UE-USA o delle Clausole Contrattuali Standard approvate dalla Commissione Europea.
@@ -155,7 +154,7 @@ I dati non sono diffusi. Possono essere comunicati alle autorità solo se richie
 
 ## 7. I tuoi diritti
 Puoi chiedere in qualsiasi momento di accedere ai tuoi dati, correggerli, cancellarli, limitarne il trattamento, riceverli in un formato leggibile (portabilità) e opporti al trattamento basato sul legittimo interesse (articoli 15–22 GDPR).
-Puoi modificare i tuoi dati dalla sezione Profilo dell'app e cancellare l'account con "Cancella profilo". Per le altre richieste scrivi a {{email}} (puoi scrivere anche a {{svil_email}}, che inoltra la richiesta al Titolare).
+Puoi modificare i tuoi dati dalla sezione Profilo dell'app e cancellare l'account con "Cancella profilo". Per le altre richieste scrivi a {{svil_email}}. Per i dati che tratta il Salone puoi rivolgerti anche al Salone.
 Se ritieni che il trattamento violi il GDPR puoi presentare reclamo al Garante per la protezione dei dati personali (www.garanteprivacy.it).
 
 ## 8. Minori
@@ -171,7 +170,7 @@ Se le autorizzi, l'app ti invia promemoria sugli appuntamenti. Puoi disattivarle
 Questa Informativa può essere aggiornata. La versione in vigore è sempre disponibile nell'app, nella sezione Profilo.`;
 
 window.RADICI_SEED.termini = `## Termini e condizioni d'uso
-Questi Termini regolano l'uso dell'app e del sito di prenotazione di {{nome}}, gestiti da {{ragione}}, con sede in {{indirizzo}}, P.IVA {{piva}} (di seguito "il Salone"). L'app e il sito sono sviluppati e forniti da {{svil_nome}}, P.IVA {{svil_piva}}, con sede in {{svil_sede}} (di seguito "lo Sviluppatore"), nell'ambito del servizio Radix Salon e per conto del Salone. Registrandoti e usando il servizio dichiari di averli letti e di accettarli.
+Questi Termini regolano l'uso dell'app e del sito di prenotazione di {{nome}} (di seguito "il Salone"), forniti da {{svil_nome}}, P.IVA {{svil_piva}}, con sede in {{svil_sede}} (di seguito "lo Sviluppatore"), nell'ambito del servizio Radix Salon. Registrandoti e usando il servizio dichiari di averli letti e di accettarli.
 
 ## 1. Il servizio
 L'app permette di consultare i servizi e il listino, vedere gli orari disponibili, prenotare, consultare e annullare i propri appuntamenti. Il servizio è gratuito. L'app non gestisce pagamenti: i servizi si pagano direttamente in salone.
@@ -222,7 +221,7 @@ Puoi cancellare il tuo account in qualsiasi momento con "Cancella profilo". Le p
 Il Salone può aggiornare questi Termini. Le modifiche importanti ti verranno segnalate nell'app. Continuando a usare il servizio dopo l'aggiornamento le accetti.
 
 ## 14. Legge applicabile e contatti
-Questi Termini sono regolati dalla legge italiana. Per le controversie con i consumatori è competente il foro del luogo di residenza o domicilio del consumatore. Per qualsiasi richiesta: {{email}} – {{telefono}}. Per problemi tecnici dell'app puoi scrivere anche allo Sviluppatore: {{svil_email}}.`;
+Questi Termini sono regolati dalla legge italiana. Per le controversie con i consumatori è competente il foro del luogo di residenza o domicilio del consumatore. Per i servizi e gli appuntamenti rivolgiti al Salone: {{email}} – {{telefono}}. Per problemi tecnici dell'app e per la privacy scrivi allo Sviluppatore: {{svil_email}}.`;
 
 /* Chi sviluppa e fornisce l'app (servizio Radix Salon). Cambia solo se l'app è fornita da un'altra società (config.js → sviluppatore). */
 window.SVILUPPATORE = Object.assign({ nome: 'Eurogestion S.A.S. di Di Fiore Rosa', piva: '05812141215', sede: 'Via Argine 572, 80147 Napoli (NA)', email: 'info@eurogestionradix.it', sito: 'https://eurogestionradix.it' }, (window.APP && window.APP.sviluppatore) || {});
