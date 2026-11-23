@@ -118,6 +118,7 @@ Ai sensi degli articoli 13 e 14 del Regolamento (UE) 2016/679 ("GDPR") e del D.L
 ## 1. Titolare del trattamento
 {{ragione}}, con sede in {{indirizzo}}, P.IVA {{piva}}.
 Email: {{email}} – Telefono: {{telefono}}.
+Sviluppatore dell'app e responsabile del trattamento: {{svil_nome}}, P.IVA {{svil_piva}}, con sede in {{svil_sede}} (email {{svil_email}}). {{svil_nome}} sviluppa e fornisce l'app e il sito di prenotazione, nell'ambito del servizio Radix Salon, per conto del Titolare. Tratta i dati personali solo per conto e secondo le istruzioni del Titolare, in base a un accordo scritto ai sensi dell'art. 28 GDPR, e non li usa per finalità proprie.
 
 ## 2. Quali dati trattiamo
 - Dati dell'account: nome, cognome, indirizzo email, numero di telefono e, se scegli di caricarla, la foto del profilo.
@@ -140,7 +141,7 @@ Nome, cognome, email e telefono sono necessari per prenotare: senza non è possi
 ## 5. Come trattiamo i dati e chi li riceve
 I dati sono trattati con strumenti elettronici e misure di sicurezza adeguate. Possono accedervi solo il Titolare e il personale del salone autorizzato.
 Per far funzionare l'app ci serviamo di fornitori che agiscono come responsabili del trattamento:
-- Eurogestion S.A.S. di Di Fiore Rosa (P.IVA 05812141215), che realizza e gestisce l'app e il sito di prenotazione per conto del Titolare (servizio Radix Salon), con accesso ai dati solo per manutenzione e assistenza.
+- {{svil_nome}} (P.IVA {{svil_piva}}), sviluppatore dell'app e del sito di prenotazione, che li gestisce per conto del Titolare nell'ambito del servizio Radix Salon, con accesso ai dati solo per manutenzione e assistenza.
 - Google Ireland Limited (Google Firebase): autenticazione e archiviazione dei dati. Il database si trova in data center dell'Unione Europea.
 - GitHub, Inc.: pubblicazione del sito e dei file dell'app, con registri tecnici di accesso.
 Alcuni fornitori potrebbero trattare dati anche fuori dall'Unione Europea. In questo caso il trasferimento avviene nel rispetto del GDPR, sulla base del Data Privacy Framework UE-USA o delle Clausole Contrattuali Standard approvate dalla Commissione Europea.
@@ -154,7 +155,7 @@ I dati non sono diffusi. Possono essere comunicati alle autorità solo se richie
 
 ## 7. I tuoi diritti
 Puoi chiedere in qualsiasi momento di accedere ai tuoi dati, correggerli, cancellarli, limitarne il trattamento, riceverli in un formato leggibile (portabilità) e opporti al trattamento basato sul legittimo interesse (articoli 15–22 GDPR).
-Puoi modificare i tuoi dati dalla sezione Profilo dell'app e cancellare l'account con "Cancella profilo". Per le altre richieste scrivi a {{email}}.
+Puoi modificare i tuoi dati dalla sezione Profilo dell'app e cancellare l'account con "Cancella profilo". Per le altre richieste scrivi a {{email}} (puoi scrivere anche a {{svil_email}}, che inoltra la richiesta al Titolare).
 Se ritieni che il trattamento violi il GDPR puoi presentare reclamo al Garante per la protezione dei dati personali (www.garanteprivacy.it).
 
 ## 8. Minori
@@ -170,7 +171,7 @@ Se le autorizzi, l'app ti invia promemoria sugli appuntamenti. Puoi disattivarle
 Questa Informativa può essere aggiornata. La versione in vigore è sempre disponibile nell'app, nella sezione Profilo.`;
 
 window.RADICI_SEED.termini = `## Termini e condizioni d'uso
-Questi Termini regolano l'uso dell'app e del sito di prenotazione di {{nome}}, gestiti da {{ragione}}, con sede in {{indirizzo}}, P.IVA {{piva}} (di seguito "il Salone"). Registrandoti e usando il servizio dichiari di averli letti e di accettarli.
+Questi Termini regolano l'uso dell'app e del sito di prenotazione di {{nome}}, gestiti da {{ragione}}, con sede in {{indirizzo}}, P.IVA {{piva}} (di seguito "il Salone"). L'app e il sito sono sviluppati e forniti da {{svil_nome}}, P.IVA {{svil_piva}}, con sede in {{svil_sede}} (di seguito "lo Sviluppatore"), nell'ambito del servizio Radix Salon e per conto del Salone. Registrandoti e usando il servizio dichiari di averli letti e di accettarli.
 
 ## 1. Il servizio
 L'app permette di consultare i servizi e il listino, vedere gli orari disponibili, prenotare, consultare e annullare i propri appuntamenti. Il servizio è gratuito. L'app non gestisce pagamenti: i servizi si pagano direttamente in salone.
@@ -209,10 +210,10 @@ Non è consentito fare prenotazioni false o di prova, prenotare a nome di altri 
 Il Salone si impegna a mantenere l'app funzionante, ma non può garantire che sia sempre disponibile e senza errori: possono esserci interruzioni per manutenzione, aggiornamenti o problemi dei fornitori tecnici. In caso di problemi puoi sempre prenotare contattando direttamente il Salone.
 
 ## 10. Responsabilità
-Il Salone risponde dei servizi eseguiti in salone secondo la legge. Non risponde dei danni dovuti a uso scorretto dell'app, a dati inseriti in modo errato dal cliente o a malfunzionamenti di reti e dispositivi non sotto il suo controllo, nei limiti consentiti dalla legge. Restano salvi i diritti del consumatore previsti dal Codice del Consumo (D.Lgs. 206/2005).
+Il Salone risponde dei servizi eseguiti in salone secondo la legge. Non risponde dei danni dovuti a uso scorretto dell'app, a dati inseriti in modo errato dal cliente o a malfunzionamenti di reti e dispositivi non sotto il suo controllo, nei limiti consentiti dalla legge. Lo Sviluppatore fornisce la tecnologia dell'app per conto del Salone: il rapporto per i servizi prenotati è tra te e il Salone. Restano salvi i diritti del consumatore previsti dal Codice del Consumo (D.Lgs. 206/2005).
 
 ## 11. Contenuti
-Nomi, marchi, logo, testi e immagini presenti nell'app appartengono al Salone o ai rispettivi titolari e non possono essere usati senza autorizzazione. La foto del profilo che carichi resta tua: la usiamo solo per mostrarla nel tuo profilo e al personale del Salone.
+Nomi, marchi, logo, testi e immagini presenti nell'app appartengono al Salone o ai rispettivi titolari e non possono essere usati senza autorizzazione. La foto del profilo che carichi resta tua: la usiamo solo per mostrarla nel tuo profilo e al personale del Salone. Il software dell'app e del sito appartiene allo Sviluppatore e non può essere copiato o riutilizzato senza autorizzazione.
 
 ## 12. Cancellazione dell'account
 Puoi cancellare il tuo account in qualsiasi momento con "Cancella profilo". Le prenotazioni in programma vengono annullate e i tuoi dati trattati come indicato nell'Informativa privacy.
@@ -221,14 +222,18 @@ Puoi cancellare il tuo account in qualsiasi momento con "Cancella profilo". Le p
 Il Salone può aggiornare questi Termini. Le modifiche importanti ti verranno segnalate nell'app. Continuando a usare il servizio dopo l'aggiornamento le accetti.
 
 ## 14. Legge applicabile e contatti
-Questi Termini sono regolati dalla legge italiana. Per le controversie con i consumatori è competente il foro del luogo di residenza o domicilio del consumatore. Per qualsiasi richiesta: {{email}} – {{telefono}}.`;
+Questi Termini sono regolati dalla legge italiana. Per le controversie con i consumatori è competente il foro del luogo di residenza o domicilio del consumatore. Per qualsiasi richiesta: {{email}} – {{telefono}}. Per problemi tecnici dell'app puoi scrivere anche allo Sviluppatore: {{svil_email}}.`;
+
+/* Chi sviluppa e fornisce l'app (servizio Radix Salon). Cambia solo se l'app è fornita da un'altra società (config.js → sviluppatore). */
+window.SVILUPPATORE = Object.assign({ nome: 'Eurogestion S.A.S. di Di Fiore Rosa', piva: '05812141215', sede: 'Via Argine 572, 80147 Napoli (NA)', email: 'info@eurogestionradix.it', sito: 'https://eurogestionradix.it' }, (window.APP && window.APP.sviluppatore) || {});
 
 /* Riempie i segnaposto con i dati del negozio; quelli mancanti restano evidenti */
 window.compilaLegale = (testo, c) => {
   const R = c.regole || {}, mancante = '[da completare]';
   const durata = m => !m ? 'il momento stesso' : m % 1440 === 0 ? (m / 1440) + (m === 1440 ? ' giorno' : ' giorni') : m % 60 === 0 ? (m / 60) + (m === 60 ? ' ora' : ' ore') : m + ' minuti';
   const v = { nome: c.nome, ragione: c.ragioneSociale, piva: c.piva, indirizzo: c.indirizzo, email: c.email, telefono: c.telefono,
-    giorniMax: R.giorniMax, maxAttive: R.maxAttive, maxServizi: R.maxServizi, annullo: durata(R.annulloMin), anticipo: durata(R.anticipoMin) };
+    giorniMax: R.giorniMax, maxAttive: R.maxAttive, maxServizi: R.maxServizi, annullo: durata(R.annulloMin), anticipo: durata(R.anticipoMin),
+    svil_nome: window.SVILUPPATORE.nome, svil_piva: window.SVILUPPATORE.piva, svil_sede: window.SVILUPPATORE.sede, svil_email: window.SVILUPPATORE.email, svil_sito: window.SVILUPPATORE.sito };
   return String(testo || '').replace(/\{\{(\w+)\}\}/g, (_, k) => (v[k] !== undefined && v[k] !== '' && v[k] !== null) ? String(v[k]) : mancante);
 };
 
