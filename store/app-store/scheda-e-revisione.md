@@ -17,7 +17,7 @@ Lingua principale: **Italiano**.
 | Prezzo | Gratuito |
 | Disponibilità | Italia (o tutti i paesi, a tua scelta) |
 | Dispositivi | Solo iPhone (iPad non attivato: non servono screenshot per iPad) |
-| URL privacy | `https://radici-app.github.io/Radici/privacy.html` |
+| URL privacy | `https://eurogestionradix.it/app/radici/privacy.html` |
 | URL di supporto | `https://radici-app.github.io/Radici/` |
 | URL marketing (facoltativo) | `https://radici-app.github.io/Radici/` |
 | Copyright | `2026 Eurogestion S.A.S. di Di Fiore Rosa` |
@@ -108,7 +108,7 @@ How to sign in with the demo account:
 How to test a booking:
 Nuova prenotazione → choose a service → Continua → choose a stylist → choose day and time → Continua → Conferma. You can then cancel it from "Prenotazioni". Bookings made by the demo account are test bookings and are ignored by the salon.
 
-Account deletion: Profilo → "Cancella profilo" (please do not delete the demo account). Web deletion page: https://radici-app.github.io/Radici/cancella-account.html
+Account deletion: Profilo → "Cancella profilo" (please do not delete the demo account). Web deletion page: https://eurogestionradix.it/app/radici/cancella-account.html
 
 Sign in options: Sign in with Apple, Google Sign-In, or email and password.
 The app does not sell anything and has no payments: services are paid at the salon.

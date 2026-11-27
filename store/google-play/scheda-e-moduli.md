@@ -18,7 +18,12 @@ Testi pronti da copiare e incollare. Lingua predefinita della scheda: **Italiano
 | Email di contatto | l'email di Eurogestion che vuoi mostrare pubblicamente |
 | Sito web | `https://radici-app.github.io/Radici/` |
 | Telefono (facoltativo) | quello del salone |
-| Norme sulla privacy (URL) | `https://radici-app.github.io/Radici/privacy.html` |
+| Norme sulla privacy (URL) | `https://eurogestionradix.it/app/radici/privacy.html` |
+
+> Le pagine di privacy, termini e cancellazione account stanno sul sito di Eurogestion (lo sviluppatore) e indicano
+> che **Master.app** (il nome sviluppatore su Google Play) è il nome commerciale di Eurogestion. Inserite in Play Console
+> il 27/11/2026. Se un giorno il nome sviluppatore diventa "Eurogestion", quella riga si può togliere (`crea-pagina-app.py`
+> nel repository Radixsalon-sito).
 
 ### Descrizione breve (max 80 caratteri)
 
@@ -77,7 +82,7 @@ Tablet: non servono screenshot (l'app è pensata per il telefono).
 ## 2. Contenuti dell'app (menu "Monitora e migliora" → "Norme e programmi" → "Contenuti dell'app")
 
 ### 2.1 Norme sulla privacy
-URL: `https://radici-app.github.io/Radici/privacy.html`
+URL: `https://eurogestionradix.it/app/radici/privacy.html`
 
 ### 2.2 Accesso all'app
 Scegli: **"Tutte le funzionalità o alcune sono soggette a restrizioni"** → **Aggiungi istruzioni**.
@@ -128,7 +133,7 @@ Domande generali:
 | L'app raccoglie o condivide uno dei tipi di dati utente richiesti? | **Sì** |
 | Tutti i dati raccolti sono criptati in transito? | **Sì** |
 | Fornisci agli utenti un modo per richiedere l'eliminazione dei dati? | **Sì** – in app (Profilo → Cancella profilo) e dal web |
-| URL per la cancellazione dell'account | `https://radici-app.github.io/Radici/cancella-account.html` |
+| URL per la cancellazione dell'account | `https://eurogestionradix.it/app/radici/cancella-account.html` |
 
 Dati **raccolti** (nessuno è **condiviso** con terze parti: Firebase/Google agisce come fornitore per conto del salone, e Google lo considera "non condivisione"). Per tutti: *raccolti*, *non trattati in modo temporaneo*.
 
