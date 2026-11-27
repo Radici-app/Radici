@@ -1,7 +1,17 @@
 # Radici – note per Claude
 
 App di prenotazione per saloni. Lo stesso sito (`index.html`, `app.js`, `seed.js`) gira nel browser e, racchiuso con Capacitor, nelle app Android (`app-android/android`) e iPhone (`app-android/ios`).
-Il titolare non è uno sviluppatore: spiegagli tutto in italiano semplice, passo per passo.
+
+## Regole di lavoro (decise dal titolare, uguali allo stampo `App-modello/App-stampo`)
+- Rispondi **in italiano**, **passo passo**, con parole semplici. Un passo alla volta quando deve fare lui qualcosa (clic esatti, poi aspetta "fatto").
+- Lavora sempre su un **ramo di lavoro**; su `main` si pubblica **solo quando dice "pubblica"** (o chiede di unire).
+- **Google Play**: l'azione `stato` si può usare sempre; `carica-test-interno` e `promuovi-produzione` **solo se lo chiede lui**.
+- Non mettere mai segreti, password o chiavi nel repository (è pubblico).
+- Se non è chiaro che vuole una modifica, prima chiedi: spesso vuole solo informazioni.
+- L'app la leggono i clienti del salone: niente testi interni per il titolare nell'app.
+- Radici ha due repository: `Radici-app/Radici` (app dei clienti, questo) e `Radici-app/Radici-app` (gestionale).
+- **Quando si corregge qualcosa qui che vale per tutte le app, riportarlo anche nello stampo** (e viceversa): i file sono volutamente quasi identici.
+  Le istruzioni complete (fabbriche, segreti, Firebase, nuove app) sono nel `CLAUDE.md` dello stampo.
 
 ## Come si lavora
 - Si sviluppa su un ramo e poi si unisce in `main`. Ogni push su `main` fa partire "App Android" (GitHub Actions), che compila l'APK per le Releases e l'AAB per Google Play.
