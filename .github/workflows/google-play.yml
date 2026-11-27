@@ -118,6 +118,20 @@ jobs:
                           ", ".join(r.get("versionCodes", [])) or "–",
                           stati.get(r.get("status", ""), r.get("status", "–")), f"{q:.0%}" if q else "–"))
 
+          def conferma(edit):
+              """Conferma le modifiche. Se Google non permette l'invio automatico in revisione (per esempio perché nella
+              Play Console ci sono altre modifiche in sospeso), le salva senza inviarle: l'invio si fa a mano dalla console."""
+              from googleapiclient.errors import HttpError
+              try:
+                  ed.commit(packageName=pkg, editId=edit).execute(); return True
+              except HttpError as e:
+                  if "changesNotSentForReview" not in str(e):
+                      raise
+                  ed.commit(packageName=pkg, editId=edit, changesNotSentForReview=True).execute()
+                  scrivi("**Salvato ma NON ancora inviato in revisione** (Google chiede di farlo a mano):")
+                  scrivi("Play Console → l'app → Panoramica della pubblicazione → controlla le modifiche → Invia per la revisione.")
+                  return False
+
           edit = ed.insert(packageName=pkg, body={}).execute()["id"]
           committed = False
           try:
@@ -130,8 +144,8 @@ jobs:
                       "track": "internal",
                       "releases": [{"name": f"{vc} (1.{vc})", "versionCodes": [vc], "status": "completed",
                                     "releaseNotes": [{"language": "it-IT", "text": note}]}]}).execute()
-                  ed.commit(packageName=pkg, editId=edit).execute(); committed = True
-                  scrivi("Disponibile per i tester tra pochi minuti (aggiorna dal Play Store). Nessuna revisione necessaria.")
+                  inviata = conferma(edit); committed = True
+                  if inviata: scrivi("Disponibile per i tester tra pochi minuti (aggiorna dal Play Store).")
 
               elif azione == "promuovi-produzione":
                   vc = os.environ.get("VERSIONE", "").strip()
@@ -149,9 +163,9 @@ jobs:
                       "track": "production",
                       "releases": [{"name": f"{vc} (1.{vc})", "versionCodes": [vc], "status": "completed",
                                     "releaseNotes": note_int or [{"language": "it-IT", "text": note}]}]}).execute()
-                  ed.commit(packageName=pkg, editId=edit).execute(); committed = True
+                  inviata = conferma(edit); committed = True
                   scrivi(f"### Versione {vc} inviata in Produzione (100%)")
-                  scrivi("Ora è in revisione da Google; con la pubblicazione gestita disattivata uscirà da sola dopo l'approvazione.")
+                  if inviata: scrivi("Ora è in revisione da Google; con la pubblicazione gestita disattivata uscirà da sola dopo l'approvazione.")
 
               elif azione != "stato":
                   sys.exit(f"Azione sconosciuta: {azione}")
