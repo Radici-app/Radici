@@ -481,7 +481,7 @@ onAuthStateChanged(auth, async u => {
     if (!PROF && u.displayName) { const p = u.displayName.split(' '); PROF = { nome: p[0], cogn: p.slice(1).join(' '), tel: '' }; }
     setTimeout(() => { if (PUSH && PROF && PROF.notifiche) attivaPush(false); }, 1500);
     unsubFid = onSnapshot(query(colF, where('uid', '==', u.uid)), s => { FMIE = s.docs.map(d => d.data()).filter(m => !m.annullato); fidOk = true; if (PAG === 'pf') renderFid(); }, () => { fidOk = true; if (PAG === 'pf') renderFid(); });
-    unsubMie = onSnapshot(query(colP, where('uid', '==', u.uid)), s => { MIE = s.docs.map(d => d.data()); mieOk = true; if (PAG === 'pm' || PAG === 'ph') mostraP(PAG); }, () => { mieOk = true; });
+    unsubMie = onSnapshot(query(colP, where('uid', '==', u.uid)), s => { MIE = s.docs.map(d => d.data()); mieOk = true; sincLocali(); if (PAG === 'pm' || PAG === 'ph') mostraP(PAG); }, () => { mieOk = true; });
   } else if (PAG === 'pm') { STORIA = ['ph']; }
   if (u && consensoDaSalvare) { consensoDaSalvare = false; setDoc(doc(db, 'saloni', SALONE, 'clienti', u.uid), Object.assign({ agg: Date.now() }, { consenso: { termini: true, privacy: true, data: Date.now() } }), { merge: true }).catch(() => {}); }
   renderTesta(); mostraP(PAG === 'pm' ? (u ? PAG : 'ph') : PAG);
@@ -544,8 +544,12 @@ if (!APP && 'serviceWorker' in navigator) addEventListener('load', () => navigat
    Qui l'app chiede il permesso, registra il telefono del cliente e apre la pagina giusta quando si tocca la notifica. ---------- */
 var PLUG = APP && window.Capacitor.Plugins ? window.Capacitor.Plugins.FirebaseMessaging || null : null;
 var PUSH = null, pushPronto = false;
+/* Promemoria GRATIS (senza server): finché le notifiche push del server sono spente, l'app programma da sola i promemoria sul telefono */
+var LOC = APP && window.Capacitor.Plugins ? window.Capacitor.Plugins.LocalNotifications || null : null;
+const locAttive = () => !!LOC && !PUSH;
 /* acceso/spento dal gestionale (C.notifiche.attive): si aggiorna da solo quando il titolare cambia l'interruttore */
 window.aggiornaPush = function () {
+  sincLocali();
   const on = !!(PLUG && C.notifiche && C.notifiche.attive === true);
   if (on === !!PUSH) return;
   PUSH = on ? PLUG : null;
@@ -575,10 +579,11 @@ async function attivaPush(chiedi) {
   } catch (e) { return 'errore'; }
 }
 function aggNotifiche() {
-  const b = $('pNot'); if (!b) return; b.hidden = !PUSH || !utente; if (b.hidden) return;
+  const b = $('pNot'); if (!b) return; b.hidden = !(PUSH || locAttive()) || !utente; if (b.hidden) return;
   $('pNotT').textContent = 'Notifiche: ' + (PROF && PROF.notifiche ? 'attive' : 'disattivate');
 }
 if ($('pNot')) $('pNot').onclick = async () => {
+  if (locAttive()) return commutaLocali();
   if (PROF && PROF.notifiche) { await togliDispositivo(true); aggNotifiche(); toast('Notifiche disattivate'); return; }
   const r = await attivaPush(true); aggNotifiche();
   if (r === 'si') toast('Notifiche attive');
@@ -587,9 +592,9 @@ if ($('pNot')) $('pNot').onclick = async () => {
 };
 /* dopo la prima prenotazione: chiedo una volta sola se vuole i promemoria */
 async function proponiNotifiche() {
-  if (!PUSH || !utente || (PROF && PROF.notifiche !== undefined)) return;
+  if (!(PUSH || locAttive()) || !utente || (PROF && PROF.notifiche !== undefined)) return;
   const ok = await dialogo('Vuoi un promemoria?', 'Ti avvisiamo con una notifica prima dell’appuntamento. Puoi cambiare idea quando vuoi dal Profilo.', 'Sì, avvisami', 'No, grazie');
-  if (ok) { const r = await attivaPush(true); if (r === 'si') toast('Perfetto, ti avviseremo'); aggNotifiche(); }
+  if (ok) { const r = PUSH ? await attivaPush(true) : await permessoLocali(true); if (r === 'si' && !PUSH) await salvaPref(true); if (r === 'si') toast('Perfetto, ti avviseremo'); aggNotifiche(); sincLocali(); }
   else { try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), Object.assign({ agg: Date.now() }, { notifiche: false }), { merge: true }); PROF = Object.assign(PROF || {}, { notifiche: false }); } catch (e) {} aggNotifiche(); }
 }
 function preparaPush() {
@@ -601,6 +606,83 @@ function preparaPush() {
   PUSH.addListener('notificationActionPerformed', e => { const d = (e.notification && e.notification.data) || {}; if (['pm', 'pa', 'pf', 'ph', 'p1', 'pi'].includes(d.pagina)) setTimeout(() => vai(d.pagina), 700); });
 }
 window.aggiornaPush();
+
+/* ---------- promemoria GRATUITI sul telefono (notifiche locali) ----------
+   Valgono finché il server delle notifiche è spento. L'app li programma da sola per gli appuntamenti futuri del cliente,
+   con gli stessi orari e testi del gestionale (24 ore prima, 1 ora prima…) e rispettando l'orario di silenzio.
+   Si riallineano a ogni apertura dell'app: se un appuntamento viene spostato o annullato lo vedono solo allora.
+   Quando il titolare accende le notifiche del server, questi si spengono da soli (niente doppioni). */
+const LFUSO = 'Europe/Rome';
+function lRoma(ms) {
+  const o = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: LFUSO, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(ms)).map(x => [x.type, x.value]));
+  return { k: `${o.year}-${o.month}-${o.day}`, m: +o.hour * 60 + +o.minute };
+}
+function lIstante(k, minuti) {
+  const [y, mo, d] = k.split('-').map(Number), finto = Date.UTC(y, mo - 1, d, 0, minuti); let t = finto;
+  for (let i = 0; i < 2; i++) { const r = lRoma(t), v = Date.UTC(...r.k.split('-').map((x, j) => j === 1 ? x - 1 : +x), 0, r.m); t += finto - v; }
+  return t;
+}
+const lPiu = (k, n) => { const d = new Date(k + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const lMin = t => { const [h, m] = String(t || '').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+function lFineSilenzio(sil, ms) {
+  if (!sil || !sil.da || !sil.a || sil.da === sil.a) return ms;
+  const r = lRoma(ms), da = lMin(sil.da), a = lMin(sil.a), dentro = da < a ? (r.m >= da && r.m < a) : (r.m >= da || r.m < a);
+  return dentro ? lIstante(r.m < a ? r.k : lPiu(r.k, 1), a) : ms;
+}
+const LGIORNI = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'], LMESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+function lValori(p, quandoMs) {
+  const oggiR = lRoma(quandoMs).k, [y, mo, d] = p.data.split('-').map(Number), gs = new Date(Date.UTC(y, mo - 1, d)).getUTCDay(), ora = hm(p.ini);
+  return { nome: p.nome || '', ora, giorno: `${LGIORNI[gs]} ${d} ${LMESI[mo - 1]}`, servizi: (p.servizi || []).map(s => s.nome).join(', '), operatore: p.staffNome || '', salone: C.nome || '',
+    quando: (p.data === oggiR ? 'oggi' : p.data === lPiu(oggiR, 1) ? 'domani' : `${LGIORNI[gs]} ${d}`) + ' alle ' + ora };
+}
+const lId = t => { let h = 7; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) % 2147483000; return h + 1; };
+var locDeb = 0, locCanale = false;
+function sincLocali() { if (!LOC) return; clearTimeout(locDeb); locDeb = setTimeout(sincLocaliOra, 700); }
+async function sincLocaliOra() {
+  if (!LOC) return;
+  try {
+    const pend = (await LOC.getPending()).notifications || [];
+    if (pend.length) await LOC.cancel({ notifications: pend.map(n => ({ id: n.id })) });
+    if (!locAttive() || !utente || !PROF || PROF.notifiche !== true || !mieOk) return;
+    if ((await LOC.checkPermissions()).display !== 'granted') return;
+    if (!locCanale) { locCanale = true; LOC.createChannel({ id: 'promemoria', name: 'Promemoria appuntamenti', description: 'Avvisi prima dei tuoi appuntamenti', importance: 4, visibility: 1, vibration: true }).catch(() => {}); }
+    const adesso = Date.now(), N = C.notifiche || {}, vis = new Set(), da = [];
+    MIE.filter(attiva).forEach(b => {
+      if (!b.data || !(b.ini >= 0)) return;
+      const inizio = lIstante(b.data, b.ini);
+      (N.promemoria || []).filter(r => r.attivo && r.prima >= 1 && String(r.testo || '').trim()).forEach(r => {
+        const quando = inizio - r.prima * 60000;
+        if (b.creata > quando) return;
+        const fire = lFineSilenzio(N.silenzio, quando);
+        if (fire >= inizio || fire <= adesso + 5000) return;
+        let id = lId(b.id + '|' + r.id); while (vis.has(id)) id++; vis.add(id);
+        da.push({ id, fire, title: window.testoNotifica(r.titolo, lValori(b, fire)) || C.nome || 'Promemoria', body: window.testoNotifica(r.testo, lValori(b, fire)) });
+      });
+    });
+    da.sort((a, b) => a.fire - b.fire);
+    const l = da.slice(0, 50).map(n => ({ id: n.id, title: n.title, body: n.body, schedule: { at: new Date(n.fire), allowWhileIdle: false }, channelId: 'promemoria', smallIcon: 'ic_notifica', extra: { pagina: 'pm' } }));
+    if (l.length) await LOC.schedule({ notifications: l });
+  } catch (e) {}
+}
+async function permessoLocali(chiedi) {
+  try {
+    let p = (await LOC.checkPermissions()).display;
+    if (p !== 'granted' && chiedi) p = (await LOC.requestPermissions()).display;
+    return p === 'granted' ? 'si' : p === 'denied' ? 'negato' : 'no';
+  } catch (e) { return 'errore'; }
+}
+async function salvaPref(v) {
+  if (!utente) return;
+  try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), { agg: Date.now(), notifiche: v }, { merge: true }); PROF = Object.assign(PROF || {}, { notifiche: v }); } catch (e) {}
+}
+async function commutaLocali() {
+  if (PROF && PROF.notifiche) { await salvaPref(false); aggNotifiche(); sincLocali(); toast('Notifiche disattivate'); return; }
+  const r = await permessoLocali(true);
+  if (r === 'si') { await salvaPref(true); aggNotifiche(); sincLocali(); toast('Notifiche attive'); }
+  else if (r === 'negato') avvisa('Le notifiche sono bloccate nelle impostazioni del telefono. Per attivarle: ' + (PIATTAFORMA === 'ios' ? 'Impostazioni → Notifiche → ' + C.nome : 'Impostazioni → App → ' + C.nome + ' → Notifiche') + '.');
+  else if (r === 'errore') avvisa('Non è stato possibile attivare le notifiche. Riprova più tardi.');
+}
+if (LOC) LOC.addListener('localNotificationActionPerformed', e => { const d = (e.notification && e.notification.extra) || {}; if (['pm', 'pa', 'pf', 'ph', 'p1', 'pi'].includes(d.pagina)) setTimeout(() => vai(d.pagina), 700); });
 
 /* ---------- AGGIUNGI AL CALENDARIO (come nella vecchia app Nails & Makeup, già collaudato) ----------
    iPhone: file .ics aperto direttamente → si apre il Calendario dell'iPhone con data e ora già inserite (basta premere Aggiungi).
