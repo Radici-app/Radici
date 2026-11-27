@@ -25,6 +25,10 @@
 
         </activity>
 
+        <!-- Promemoria locali: tolto il FileProvider del plugin (serve solo agli allegati delle notifiche, che non usiamo):
+             nella versione per Google Play non deve restare nessun FileProvider né traccia dell'aggiornamento automatico -->
+        <provider android:name="com.capacitorjs.plugins.localnotifications.LocalNotificationsAssetProvider" tools:node="remove" />
+
         <!-- Notifiche push: icona, colore e canale predefinito -->
         <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_notifica" />
         <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/notifica" />
