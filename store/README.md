@@ -17,7 +17,7 @@
 | iPhone | App Store / TestFlight | dall'App Store | per ora solo build di verifica non firmata |
 
 Il numero di versione (`versionCode`) è il numero della compilazione su GitHub: cresce sempre da solo.
-I promemoria push sono spenti: in `app.js` c'è `const PROMEMORIA_ATTIVI = false;` → mettere `true` quando il server delle notifiche è attivo.
+Promemoria: finché le notifiche push del server sono spente, l'app li programma da sola sul telefono (notifiche locali, senza sveglie esatte). Quando si accende "Invio notifiche attivo" nel gestionale, li manda il server. Dettagli in `CLAUDE.md`.
 
 ---
 
@@ -57,4 +57,4 @@ I promemoria push sono spenti: in `app.js` c'è `const PROMEMORIA_ATTIVI = false
 - [ ] Authentication → provider **Apple** abilitato.
 - [ ] Cloud Messaging → chiave **APNs** caricata.
 - [ ] Authentication → Impostazioni → Domini autorizzati: `radici-app.github.io` presente (già usato oggi dal sito).
-- [ ] Più avanti: piano Blaze + Cloud Functions per i promemoria, poi `PROMEMORIA_ATTIVI = true`.
+- [ ] Più avanti (facoltativo): piano Blaze + Cloud Functions, poi "Invio notifiche attivo" nel gestionale. Nel frattempo i promemoria locali funzionano già.
