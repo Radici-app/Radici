@@ -25,8 +25,8 @@
 
         </activity>
 
-        <!-- Promemoria locali: tolto il FileProvider del plugin (serve solo agli allegati delle notifiche, che non usiamo):
-             nella versione per Google Play non deve restare nessun FileProvider né traccia dell'aggiornamento automatico -->
+        <!-- Promemoria locali: tolto il componente per gli allegati delle notifiche (non li usiamo).
+             Nei commenti di questo file non scrivere il nome di quel componente: il controllo della versione Google Play lo cerca anche qui. -->
         <provider android:name="com.capacitorjs.plugins.localnotifications.LocalNotificationsAssetProvider" tools:node="remove" />
 
         <!-- Notifiche push: icona, colore e canale predefinito -->
@@ -42,5 +42,5 @@
     <!-- Promemoria locali: niente "allarmi esatti" (Google Play li vuole dichiarati); i promemoria arrivano con qualche minuto di tolleranza -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" tools:node="remove" />
-    <!-- Permesso e FileProvider per l'aggiornamento automatico: solo nella versione "github" (src/github/AndroidManifest.xml) -->
+    <!-- Le parti dell'aggiornamento automatico stanno solo nella versione "github" (src/github/AndroidManifest.xml) -->
 </manifest>
