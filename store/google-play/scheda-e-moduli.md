@@ -149,7 +149,7 @@ Dati **raccolti** (nessuno è **condiviso** con terze parti: Firebase/Google agi
 
 Non raccolti: posizione, dati finanziari, salute, messaggi, contatti, calendario (l'app crea l'evento ma non legge il calendario), audio, file, cronologia di navigazione, diagnostica, ID pubblicità.
 
-> Il codice per le notifiche è indicato anche se oggi i promemoria sono spenti (`PROMEMORIA_ATTIVI = false`), così la dichiarazione resta valida quando li riattivi.
+> Il codice per le notifiche serve alle notifiche push del server. Oggi i promemoria sono locali (programmati dall'app sul telefono), ma la dichiarazione resta valida quando si accendono quelle del server.
 
 ### 2.10 Permessi
 La versione per Google Play chiede solo Internet, Notifiche (Android 13+) e, solo se tocchi "cambia foto", la scelta di un'immagine dalla galleria tramite il selettore di sistema. **Non** contiene il permesso `REQUEST_INSTALL_PACKAGES` (che rimane solo nell'APK di GitHub), quindi non serve alcuna dichiarazione.
