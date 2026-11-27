@@ -660,7 +660,9 @@ async function sincLocaliOra() {
       });
     });
     da.sort((a, b) => a.fire - b.fire);
-    const l = da.slice(0, 50).map(n => ({ id: n.id, title: n.title, body: n.body, schedule: { at: new Date(n.fire), allowWhileIdle: false }, channelId: 'promemoria', smallIcon: 'ic_notifica', extra: { pagina: 'pm' } }));
+    /* isExactNotification: false = il plugin non apre la schermata "Sveglie e promemoria" (permesso tolto dal manifest);
+       allowWhileIdle: true = suona anche col telefono a riposo, con qualche minuto di tolleranza */
+    const l = da.slice(0, 50).map(n => ({ id: n.id, title: n.title, body: n.body, schedule: { at: new Date(n.fire), allowWhileIdle: true }, isExactNotification: false, channelId: 'promemoria', smallIcon: 'ic_notifica', extra: { pagina: 'pm' } }));
     if (l.length) await LOC.schedule({ notifications: l });
   } catch (e) {}
 }
