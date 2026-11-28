@@ -1,0 +1,12 @@
+{
+  "name": "notifiche",
+  "private": true,
+  "description": "Programma delle notifiche push (Firebase Cloud Functions)",
+  "main": "index.js",
+  "engines": { "node": "22" },
+  "scripts": { "prova": "node prova.js" },
+  "dependencies": {
+    "firebase-admin": "^13.6.0",
+    "firebase-functions": "^7.4.0"
+  }
+}

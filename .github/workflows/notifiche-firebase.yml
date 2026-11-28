@@ -1,0 +1,96 @@
+# Installa il programma delle notifiche push (cartella functions/) su Firebase Cloud Functions.
+#  - prova:    controlla che il programma e la chiave siano a posto, SENZA installare nulla.
+#              Parte da sola quando cambia il programma (su qualsiasi ramo).
+#  - installa: installa (o aggiorna) il programma sul progetto Firebase. Solo a mano e solo dal ramo main,
+#              quando lo decide il titolare. Serve il piano Blaze sul progetto.
+# Chiave: segreto FIREBASE_SERVICE_ACCOUNT_JSON (account di servizio con i ruoli Editor,
+# Service Account User e Cloud Functions Admin sul progetto). Il progetto si legge da config.js
+# (APP.firebase.projectId) se c'è, altrimenti dalla chiave.
+# Le notifiche partono solo dopo aver acceso "Invio notifiche attivo" nel gestionale → Notifiche push.
+name: Notifiche Firebase
+
+on:
+  push:
+    paths:
+      - 'functions/**'
+      - 'firebase.json'
+      - '.github/workflows/notifiche-firebase.yml'
+  workflow_dispatch:
+    inputs:
+      azione:
+        description: Cosa fare
+        type: choice
+        options:
+          - prova
+          - installa
+        default: prova
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notifiche-firebase
+  cancel-in-progress: false
+
+jobs:
+  firebase:
+    runs-on: ubuntu-latest
+    env:
+      FB_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+      AZIONE: ${{ github.event_name == 'push' && 'prova' || inputs.azione }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Controlla la richiesta
+        run: |
+          echo "Azione: $AZIONE"
+          if [ -z "$FB_JSON" ]; then
+            if [ "$AZIONE" = "installa" ]; then echo "::error::Manca il segreto FIREBASE_SERVICE_ACCOUNT_JSON"; exit 1; fi
+            echo "::warning::Manca il segreto FIREBASE_SERVICE_ACCOUNT_JSON: controllo solo il programma."
+          fi
+          if [ "$AZIONE" = "installa" ] && [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::L'installazione si fa solo dal ramo main"; exit 1
+          fi
+
+      - name: Chiave e progetto Firebase
+        run: |
+          if [ -n "$FB_JSON" ]; then
+            printf '%s' "$FB_JSON" > "$RUNNER_TEMP/chiave.json"
+            echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/chiave.json" >> "$GITHUB_ENV"
+          else
+            echo '{"project_id":"senza-chiave"}' > "$RUNNER_TEMP/chiave.json"
+          fi
+          P=$(node -e "
+            const fs=require('fs');let p='';
+            if(fs.existsSync('config.js')){global.window={};require('./config.js');p=(window.APP.firebase||{}).projectId||'';}
+            if(!p||p.startsWith('DA-COMPILARE'))p=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/chiave.json','utf8')).project_id;
+            console.log(p)")
+          echo "Progetto Firebase: $P"
+          echo "PROGETTO=$P" >> "$GITHUB_ENV"
+
+      - name: Prepara il programma (copia seed.js e installa le librerie)
+        working-directory: functions
+        run: |
+          cp ../seed.js seed.js
+          npm ci --no-audit --no-fund
+          npm run prova
+
+      - name: Prova (non installa nulla)
+        if: env.AZIONE == 'prova'
+        run: |
+          node -e "process.env.GCLOUD_PROJECT='$PROGETTO';process.env.FIREBASE_CONFIG=JSON.stringify({projectId:'$PROGETTO'});const f=require('./functions/index.js');console.log('Parti del programma:',Object.keys(f).join(', '))"
+          { echo "### Prova riuscita (niente installato)"; echo "Programma pronto per il progetto **$PROGETTO**. Per installarlo: Actions → Notifiche Firebase → Run workflow → installa (dal ramo main)."; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Installa su Firebase
+        if: env.AZIONE == 'installa'
+        run: |
+          npx --yes firebase-tools@15 deploy --only functions --project "$PROGETTO" --non-interactive --force
+          { echo "### Programma delle notifiche installato sul progetto $PROGETTO"; echo "Ora nel gestionale → Notifiche push accendi **Invio notifiche attivo** e premi Salva."; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Cancella la chiave
+        if: always()
+        run: rm -f "$RUNNER_TEMP/chiave.json"

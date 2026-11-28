@@ -1,10 +1,13 @@
 /* Radici – app clienti */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithPopup, signInWithCredential, GoogleAuthProvider, signOut, deleteUser } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithPopup, signInWithCredential, GoogleAuthProvider, OAuthProvider, signOut, deleteUser } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot, query, where, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const VERSIONE = '1.0';
 const SALONE = 'radici';
+/* Notifiche push: si accendono e si spengono dal gestionale → Notifiche push → "Invio notifiche attivo"
+   (campo notifiche.attive del salone, letto da Firebase). Finché è spento l'app non chiede "Vuoi un promemoria?"
+   e nel Profilo non compare il tasto Notifiche. Così non serve aggiornare l'app per attivarle. */
 const fbApp = initializeApp({ apiKey: 'AIzaSyCUhd6pXSheUQ6gPhT5OfvprM5dYI2uxz4', authDomain: 'radici-app.firebaseapp.com', projectId: 'radici-app', storageBucket: 'radici-app.firebasestorage.app', messagingSenderId: '602201707324', appId: '1:602201707324:web:88d8681280de279b81c439' });
 const auth = getAuth(fbApp);
 /* i dati letti restano salvati sul telefono: riaprendo l'app Firebase rimanda solo quello che è cambiato */
@@ -36,7 +39,7 @@ let BUSY = [], busyOk = false, utente = null, PROF = null, MIE = [], mieOk = fal
 let sel = [], staffSel = 'any', giorno = null, ora = null, mese = null;
 let prCfg = false, prAuth = false;
 const prova = () => { if (prCfg && prAuth && window.splashPronto) window.splashPronto(); };
-onSnapshot(doc(db, 'saloni', SALONE), s => { if (s.exists()) { C = Object.assign(cp(window.RADICI_SEED), window.fasceDaDb(s.data())); window.splashDati && window.splashDati(C); sel = sel.filter(id => serv(id)); ridisegna(); } prCfg = true; prova(); }, () => { prCfg = true; prova(); });
+onSnapshot(doc(db, 'saloni', SALONE), s => { if (s.exists()) { C = Object.assign(cp(window.RADICI_SEED), window.fasceDaDb(s.data())); window.splashDati && window.splashDati(C); sel = sel.filter(id => serv(id)); ridisegna(); if (window.aggiornaPush) window.aggiornaPush(); } prCfg = true; prova(); }, () => { prCfg = true; prova(); });
 /* orari occupati: si scaricano solo per il giorno che il cliente tocca (il calendario usa solo gli orari del salone) */
 let unsubBusy = null, busyChiave = '';
 function seguiBusy(da, a) {
@@ -76,7 +79,7 @@ function vai(p) { if (p === 'ph') STORIA = ['ph']; else if (STORIA[STORIA.length
 function indietro() { if (STORIA.length > 1) history.back(); else mostraP('ph'); }
 addEventListener('popstate', () => { if (!$('viewer').hidden) { chiudiFoto(); return; } for (const id of ['calq', 'login', 'dlg', 'prof']) if (!$(id).hidden) { $(id).hidden = true; return; } if (STORIA.length > 1) { STORIA.pop(); mostraP(STORIA[STORIA.length - 1]); } });
 document.addEventListener('click', e => {
-  const g = e.target.closest('[data-go]'); if (g) { const p = g.dataset.go; if (p === 'pm' && !utente) { apriLogin(); return; } if (p === 'ph' || p === 'p1' && PAG === 'p5') STORIA = ['ph']; vai(p); return; }
+  const g = e.target.closest('[data-go]'); if (g) { const p = g.dataset.go; if ((p === 'pv' || p === 'pt') && apriLegale(p)) return; if (p === 'pm' && !utente) { apriLogin(); return; } if (p === 'ph' || p === 'p1' && PAG === 'p5') STORIA = ['ph']; vai(p); return; }
   if (e.target.closest('[data-back]')) indietro();
 });
 function ridisegna() { mostraP(PAG); }
@@ -392,6 +395,12 @@ function renderFid() {
    <h3 class="fh">I tuoi movimenti</h3>${M.length ? `<div class="row">${M.map(m => `<div class="fmv"><div><b>${TIPIF[m.tipo] || ''}</b><small>${new Date(m.data + 'T12:00').toLocaleDateString('it-IT')}${m.nota ? ' · ' + esc(m.nota) : ''}</small></div><span class="${m.punti < 0 ? 'meno' : ''}">${m.punti > 0 ? '+' : ''}${m.punti}</span></div>`).join('')}</div>` : '<p class="vuoto">Ancora nessun punto: li ricevi dopo ogni appuntamento in salone.</p>'}`;
 }
 const renderReg = () => { $('tReg').innerHTML = window.FID.html(fidCfg(), C, esc); };
+// Privacy e Termini si aprono direttamente sulla pagina web di Eurogestion (se c'è internet); senza rete si legge il testo nell'app
+const apriLegale = p => {
+  if (navigator.onLine === false) return false;
+  const a = document.createElement('a'); a.href = 'https://eurogestionradix.it/app/radici/' + (p === 'pv' ? 'privacy.html' : 'termini.html');
+  a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); return true;
+};
 const aggLegali = () => { $('tPriv').innerHTML = testoLegale(C.privacy || window.RADICI_SEED.privacy); $('tTerm').innerHTML = testoLegale(C.termini || window.RADICI_SEED.termini); };
 function renderProfilo() {
   ['pMod', 'pDel', 'pOut'].forEach(id => $(id).hidden = !utente); $('pIn').hidden = !!utente; $('pBenv').hidden = !!utente; document.querySelector('.pfoto').style.pointerEvents = utente ? '' : 'none'; document.querySelector('.pfoto .cam').hidden = !utente;
@@ -444,12 +453,18 @@ async function consenso() {
   await dialogo('Attenzione', 'Prima di poter proseguire devi dichiarare di aver preso visione dei termini del servizio e della privacy policy.', 'Ok');
   return false;
 }
-document.querySelectorAll('[data-leggi]').forEach(a => a.onclick = e => { e.preventDefault(); $('login').hidden = true; vai(a.dataset.leggi); });
+document.querySelectorAll('[data-leggi]').forEach(a => a.onclick = e => { e.preventDefault(); if (apriLegale(a.dataset.leggi)) return; $('login').hidden = true; vai(a.dataset.leggi); });
 $('lX').onclick = () => { $('login').hidden = true; };
 $('cBtn').onclick = () => utente ? signOut(auth) : apriLogin();
 const errAuth = e => ({ 'auth/invalid-credential': 'Email o password non corretti.', 'auth/wrong-password': 'Email o password non corretti.', 'auth/user-not-found': 'Email o password non corretti.', 'auth/invalid-email': 'Controlla l’indirizzo email.', 'auth/email-already-in-use': 'Esiste già un account con questa email: accedi.', 'auth/weak-password': 'La password deve avere almeno 6 caratteri.', 'auth/too-many-requests': 'Troppi tentativi: riprova tra qualche minuto.', 'auth/network-request-failed': 'Controlla la connessione e riprova.' })[e && e.code] || 'Operazione non riuscita. Riprova.';
-/* Google: nell'app Android con la scelta dell'account del telefono, sul sito con la finestra di Google */
+/* Google: nell'app (Android e iPhone) con la scelta dell'account del telefono, sul sito con la finestra di Google */
 const FA = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins ? window.Capacitor.Plugins.FirebaseAuthentication : null;
+const PIATTAFORMA = window.Capacitor && window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : 'web';
+/* Accedi con Apple: solo nell'app per iPhone (Apple lo chiede quando c'è anche l'accesso con Google) */
+if (FA && PIATTAFORMA === 'ios' && $('lApple')) {
+  $('lApple').hidden = false;
+  $('lApple').onclick = async () => { if (!await consenso()) return; try { const r = await FA.signInWithApple(); await signInWithCredential(auth, new OAuthProvider('apple.com').credential({ idToken: r.credential && r.credential.idToken, rawNonce: r.credential && r.credential.nonce })); } catch (e) { if (/cancel|1001/i.test(String(e && (e.code || e.message)))) return; $('lErr').textContent = 'Accesso con Apple non riuscito (' + (e.code || e.message || 'errore') + ').'; } };
+}
 $('lGoogle').onclick = async () => { if (!await consenso()) return; try { if (FA) { const r = await FA.signInWithGoogle(); await signInWithCredential(auth, GoogleAuthProvider.credential(r.credential && r.credential.idToken)); } else await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { if (/popup-closed|cancelled-popup/.test(e.code) || /cancel/i.test(String(e && e.message))) return; $('lErr').textContent = FA ? 'Accesso con Google non riuscito (' + (e.code || e.message || 'errore') + ').' : errAuth(e); } };
 $('lIn').onclick = async () => { if (!await consenso()) return; const m = $('lMail').value.trim(), p = $('lPass').value; if (!m || !p) { $('lErr').textContent = 'Inserisci email e password.'; return; } try { await signInWithEmailAndPassword(auth, m, p); } catch (e) { $('lErr').textContent = errAuth(e); } };
 $('lReg').onclick = async () => { if (!await consenso()) return; const m = $('lMail').value.trim(), p = $('lPass').value; if (!/^\S+@\S+\.\S+$/.test(m)) { $('lErr').textContent = 'Inserisci un’email valida.'; return; } if (p.length < 6) { $('lErr').textContent = 'Scegli una password di almeno 6 caratteri.'; return; } try { const c = await createUserWithEmailAndPassword(auth, m, p); sendEmailVerification(c.user).catch(() => {}); } catch (e) { $('lErr').textContent = errAuth(e); } };
@@ -464,16 +479,16 @@ onAuthStateChanged(auth, async u => {
     $('login').hidden = true;
     try { const d = await getDoc(doc(db, 'saloni', SALONE, 'clienti', u.uid)); if (d.exists()) PROF = d.data(); } catch (e) {}
     if (!PROF && u.displayName) { const p = u.displayName.split(' '); PROF = { nome: p[0], cogn: p.slice(1).join(' '), tel: '' }; }
-    setTimeout(() => { if (PROF && PROF.notifiche) attivaPush(false); }, 1500);
+    setTimeout(() => { if (PUSH && PROF && PROF.notifiche) attivaPush(false); }, 1500);
     unsubFid = onSnapshot(query(colF, where('uid', '==', u.uid)), s => { FMIE = s.docs.map(d => d.data()).filter(m => !m.annullato); fidOk = true; if (PAG === 'pf') renderFid(); }, () => { fidOk = true; if (PAG === 'pf') renderFid(); });
-    unsubMie = onSnapshot(query(colP, where('uid', '==', u.uid)), s => { MIE = s.docs.map(d => d.data()); mieOk = true; if (PAG === 'pm' || PAG === 'ph') mostraP(PAG); }, () => { mieOk = true; });
+    unsubMie = onSnapshot(query(colP, where('uid', '==', u.uid)), s => { MIE = s.docs.map(d => d.data()); mieOk = true; sincLocali(); if (PAG === 'pm' || PAG === 'ph') mostraP(PAG); }, () => { mieOk = true; });
   } else if (PAG === 'pm') { STORIA = ['ph']; }
   if (u && consensoDaSalvare) { consensoDaSalvare = false; setDoc(doc(db, 'saloni', SALONE, 'clienti', u.uid), Object.assign({ agg: Date.now() }, { consenso: { termini: true, privacy: true, data: Date.now() } }), { merge: true }).catch(() => {}); }
   renderTesta(); mostraP(PAG === 'pm' ? (u ? PAG : 'ph') : PAG);
   prAuth = true; prova();
 });
 
-/* ---------- solo nell'app Android: tasto Indietro, Google non disponibile, avviso di nuova versione ---------- */
+/* ---------- solo nell'app (Android / iPhone): tasto Indietro, Google non disponibile, avviso di nuova versione (solo APK di GitHub) ---------- */
 const APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 if (APP) {
   document.documentElement.classList.add('in-app');
@@ -486,7 +501,10 @@ if (APP) {
     if (PAG !== 'ph') { indietro(); return; }
     N.App.exitApp();
   });
-  (async () => {
+  /* Aggiornamento "fatto in casa" solo nella versione APK scaricata da GitHub, che ha il plugin Aggiorna.
+     La versione di Google Play e quella per iPhone non lo hanno: si aggiornano dallo store. */
+  const conAggiorna = !!(window.Capacitor.isPluginAvailable && window.Capacitor.isPluginAvailable('Aggiorna'));
+  if (conAggiorna) (async () => {
     const REPO = 'Radici-app/Radici', AGG = N.Aggiorna;
     let mia = 0; try { mia = (await (await fetch('versione.json', { cache: 'no-store' })).json()).v || 0; } catch (e) { return; }
     if (!mia) return;
@@ -501,7 +519,6 @@ if (APP) {
         aperto = true;
         const url = 'https://github.com/' + REPO + '/releases/download/app-v1.' + n + '/Radici.apk';
         if (!await dialogo('Nuova versione disponibile', 'È uscita la versione 1.' + n + ' dell’app (tu hai la 1.' + mia + '). Tocca “Aggiorna”: l’app la scarica da sola, poi conferma nella schermata di Android. I tuoi dati restano.', 'Aggiorna', 'Più tardi')) { try { sessionStorage.setItem('aggNo', String(n)); } catch (e) {} aperto = false; return; }
-        if (!AGG) { location.href = url; aperto = false; return; }
         if (!(await AGG.puoInstallare()).ok) {
           if (!await dialogo('Un permesso, una volta sola', 'Android chiede di consentire a questa app di installare gli aggiornamenti. Nella schermata che si apre attiva “Consenti da questa fonte”, poi torna indietro.', 'Apri impostazioni', 'Annulla')) { aperto = false; return; }
           await AGG.apriPermesso();
@@ -522,14 +539,28 @@ window.riempiIcone(); try { history.replaceState({ r: 1 }, ''); } catch (e) {}
 mostraP('ph');
 if (!APP && 'serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 
-/* ---------- notifiche push (app Android): promemoria degli appuntamenti e messaggi del salone.
+/* ---------- notifiche push (app Android e iPhone): promemoria degli appuntamenti e messaggi del salone.
    Le invia il server (Firebase Cloud Functions) secondo quanto deciso nella dashboard → Notifiche push.
    Qui l'app chiede il permesso, registra il telefono del cliente e apre la pagina giusta quando si tocca la notifica. ---------- */
-var PUSH = APP && window.Capacitor.Plugins ? window.Capacitor.Plugins.FirebaseMessaging || null : null;
+var PLUG = APP && window.Capacitor.Plugins ? window.Capacitor.Plugins.FirebaseMessaging || null : null;
+var PUSH = null, pushPronto = false;
+/* Promemoria GRATIS (senza server): finché le notifiche push del server sono spente, l'app programma da sola i promemoria sul telefono */
+var LOC = APP && window.Capacitor.Plugins ? window.Capacitor.Plugins.LocalNotifications || null : null;
+const locAttive = () => !!LOC && !PUSH;
+/* acceso/spento dal gestionale (C.notifiche.attive): si aggiorna da solo quando il titolare cambia l'interruttore */
+window.aggiornaPush = function () {
+  sincLocali();
+  const on = !!(PLUG && C.notifiche && C.notifiche.attive === true);
+  if (on === !!PUSH) return;
+  PUSH = on ? PLUG : null;
+  if (PUSH && !pushPronto) { pushPronto = true; preparaPush(); }
+  aggNotifiche();
+  if (PUSH && utente && PROF && PROF.notifiche) attivaPush(false);
+};
 var pushToken = '';
 async function salvaDispositivo(t) {
   if (!utente || !t) return; pushToken = t;
-  const l = ((PROF && PROF.dispositivi) || []).filter(d => d.token !== t).slice(-4).concat({ token: t, os: 'android', agg: Date.now() });
+  const l = ((PROF && PROF.dispositivi) || []).filter(d => d.token !== t).slice(-4).concat({ token: t, os: PIATTAFORMA, agg: Date.now() });
   try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), Object.assign({ agg: Date.now() }, { dispositivi: l, notifiche: true }), { merge: true }); PROF = Object.assign(PROF || {}, { dispositivi: l, notifiche: true }); } catch (e) {}
 }
 async function togliDispositivo(spegni) {
@@ -548,24 +579,25 @@ async function attivaPush(chiedi) {
   } catch (e) { return 'errore'; }
 }
 function aggNotifiche() {
-  const b = $('pNot'); if (!b) return; b.hidden = !PUSH || !utente; if (b.hidden) return;
+  const b = $('pNot'); if (!b) return; b.hidden = !(PUSH || locAttive()) || !utente; if (b.hidden) return;
   $('pNotT').textContent = 'Notifiche: ' + (PROF && PROF.notifiche ? 'attive' : 'disattivate');
 }
 if ($('pNot')) $('pNot').onclick = async () => {
+  if (locAttive()) return commutaLocali();
   if (PROF && PROF.notifiche) { await togliDispositivo(true); aggNotifiche(); toast('Notifiche disattivate'); return; }
   const r = await attivaPush(true); aggNotifiche();
   if (r === 'si') toast('Notifiche attive');
-  else if (r === 'negato') avvisa('Le notifiche sono bloccate nelle impostazioni del telefono. Per attivarle: Impostazioni → App → ' + C.nome + ' → Notifiche.');
+  else if (r === 'negato') avvisa('Le notifiche sono bloccate nelle impostazioni del telefono. Per attivarle: ' + (PIATTAFORMA === 'ios' ? 'Impostazioni → Notifiche → ' + C.nome : 'Impostazioni → App → ' + C.nome + ' → Notifiche') + '.');
   else if (r === 'errore') avvisa('Non è stato possibile attivare le notifiche. Riprova più tardi.');
 };
 /* dopo la prima prenotazione: chiedo una volta sola se vuole i promemoria */
 async function proponiNotifiche() {
-  if (!PUSH || !utente || (PROF && PROF.notifiche !== undefined)) return;
+  if (!(PUSH || locAttive()) || !utente || (PROF && PROF.notifiche !== undefined)) return;
   const ok = await dialogo('Vuoi un promemoria?', 'Ti avvisiamo con una notifica prima dell’appuntamento. Puoi cambiare idea quando vuoi dal Profilo.', 'Sì, avvisami', 'No, grazie');
-  if (ok) { const r = await attivaPush(true); if (r === 'si') toast('Perfetto, ti avviseremo'); aggNotifiche(); }
+  if (ok) { const r = PUSH ? await attivaPush(true) : await permessoLocali(true); if (r === 'si' && !PUSH) await salvaPref(true); if (r === 'si') toast('Perfetto, ti avviseremo'); aggNotifiche(); sincLocali(); }
   else { try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), Object.assign({ agg: Date.now() }, { notifiche: false }), { merge: true }); PROF = Object.assign(PROF || {}, { notifiche: false }); } catch (e) {} aggNotifiche(); }
 }
-if (PUSH) {
+function preparaPush() {
   PUSH.createChannel({ id: 'promemoria', name: 'Promemoria appuntamenti', description: 'Avvisi prima dei tuoi appuntamenti', importance: 4, visibility: 1, vibration: true }).catch(() => {});
   PUSH.createChannel({ id: 'salone', name: 'Comunicazioni del salone', description: 'Novità, punti fedeltà e messaggi del salone', importance: 3, visibility: 1 }).catch(() => {});
   PUSH.addListener('tokenReceived', e => { if (utente && PROF && PROF.notifiche) salvaDispositivo(e.token); });
@@ -573,6 +605,86 @@ if (PUSH) {
   PUSH.addListener('notificationReceived', e => { const n = e.notification || {}; if (n.title || n.body) toast((n.title ? n.title + ' – ' : '') + (n.body || '')); });
   PUSH.addListener('notificationActionPerformed', e => { const d = (e.notification && e.notification.data) || {}; if (['pm', 'pa', 'pf', 'ph', 'p1', 'pi'].includes(d.pagina)) setTimeout(() => vai(d.pagina), 700); });
 }
+window.aggiornaPush();
+
+/* ---------- promemoria GRATUITI sul telefono (notifiche locali) ----------
+   Valgono finché il server delle notifiche è spento. L'app li programma da sola per gli appuntamenti futuri del cliente,
+   con gli stessi orari e testi del gestionale (24 ore prima, 1 ora prima…) e rispettando l'orario di silenzio.
+   Si riallineano a ogni apertura dell'app: se un appuntamento viene spostato o annullato lo vedono solo allora.
+   Quando il titolare accende le notifiche del server, questi si spengono da soli (niente doppioni). */
+const LFUSO = 'Europe/Rome';
+function lRoma(ms) {
+  const o = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: LFUSO, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(ms)).map(x => [x.type, x.value]));
+  return { k: `${o.year}-${o.month}-${o.day}`, m: +o.hour * 60 + +o.minute };
+}
+function lIstante(k, minuti) {
+  const [y, mo, d] = k.split('-').map(Number), finto = Date.UTC(y, mo - 1, d, 0, minuti); let t = finto;
+  for (let i = 0; i < 2; i++) { const r = lRoma(t), v = Date.UTC(...r.k.split('-').map((x, j) => j === 1 ? x - 1 : +x), 0, r.m); t += finto - v; }
+  return t;
+}
+const lPiu = (k, n) => { const d = new Date(k + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const lMin = t => { const [h, m] = String(t || '').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+function lFineSilenzio(sil, ms) {
+  if (!sil || !sil.da || !sil.a || sil.da === sil.a) return ms;
+  const r = lRoma(ms), da = lMin(sil.da), a = lMin(sil.a), dentro = da < a ? (r.m >= da && r.m < a) : (r.m >= da || r.m < a);
+  return dentro ? lIstante(r.m < a ? r.k : lPiu(r.k, 1), a) : ms;
+}
+const LGIORNI = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'], LMESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+function lValori(p, quandoMs) {
+  const oggiR = lRoma(quandoMs).k, [y, mo, d] = p.data.split('-').map(Number), gs = new Date(Date.UTC(y, mo - 1, d)).getUTCDay(), ora = hm(p.ini);
+  return { nome: p.nome || '', ora, giorno: `${LGIORNI[gs]} ${d} ${LMESI[mo - 1]}`, servizi: (p.servizi || []).map(s => s.nome).join(', '), operatore: p.staffNome || '', salone: C.nome || '',
+    quando: (p.data === oggiR ? 'oggi' : p.data === lPiu(oggiR, 1) ? 'domani' : `${LGIORNI[gs]} ${d}`) + ' alle ' + ora };
+}
+const lId = t => { let h = 7; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) % 2147483000; return h + 1; };
+var locDeb = 0, locCanale = false;
+function sincLocali() { if (!LOC) return; clearTimeout(locDeb); locDeb = setTimeout(sincLocaliOra, 700); }
+async function sincLocaliOra() {
+  if (!LOC) return;
+  try {
+    const pend = (await LOC.getPending()).notifications || [];
+    if (pend.length) await LOC.cancel({ notifications: pend.map(n => ({ id: n.id })) });
+    if (!locAttive() || !utente || !PROF || PROF.notifiche !== true || !mieOk) return;
+    if ((await LOC.checkPermissions()).display !== 'granted') return;
+    if (!locCanale) { locCanale = true; LOC.createChannel({ id: 'promemoria', name: 'Promemoria appuntamenti', description: 'Avvisi prima dei tuoi appuntamenti', importance: 4, visibility: 1, vibration: true }).catch(() => {}); }
+    const adesso = Date.now(), N = C.notifiche || {}, vis = new Set(), da = [];
+    MIE.filter(attiva).forEach(b => {
+      if (!b.data || !(b.ini >= 0)) return;
+      const inizio = lIstante(b.data, b.ini);
+      (N.promemoria || []).filter(r => r.attivo && r.prima >= 1 && String(r.testo || '').trim()).forEach(r => {
+        const quando = inizio - r.prima * 60000;
+        if (b.creata > quando) return;
+        const fire = lFineSilenzio(N.silenzio, quando);
+        if (fire >= inizio || fire <= adesso + 5000) return;
+        let id = lId(b.id + '|' + r.id); while (vis.has(id)) id++; vis.add(id);
+        da.push({ id, fire, title: window.testoNotifica(r.titolo, lValori(b, fire)) || C.nome || 'Promemoria', body: window.testoNotifica(r.testo, lValori(b, fire)) });
+      });
+    });
+    da.sort((a, b) => a.fire - b.fire);
+    /* isExactNotification: false = il plugin non apre la schermata "Sveglie e promemoria" (permesso tolto dal manifest);
+       allowWhileIdle: true = suona anche col telefono a riposo, con qualche minuto di tolleranza */
+    const l = da.slice(0, 50).map(n => ({ id: n.id, title: n.title, body: n.body, schedule: { at: new Date(n.fire), allowWhileIdle: true }, isExactNotification: false, channelId: 'promemoria', smallIcon: 'ic_notifica', extra: { pagina: 'pm' } }));
+    if (l.length) await LOC.schedule({ notifications: l });
+  } catch (e) {}
+}
+async function permessoLocali(chiedi) {
+  try {
+    let p = (await LOC.checkPermissions()).display;
+    if (p !== 'granted' && chiedi) p = (await LOC.requestPermissions()).display;
+    return p === 'granted' ? 'si' : p === 'denied' ? 'negato' : 'no';
+  } catch (e) { return 'errore'; }
+}
+async function salvaPref(v) {
+  if (!utente) return;
+  try { await setDoc(doc(db, 'saloni', SALONE, 'clienti', utente.uid), { agg: Date.now(), notifiche: v }, { merge: true }); PROF = Object.assign(PROF || {}, { notifiche: v }); } catch (e) {}
+}
+async function commutaLocali() {
+  if (PROF && PROF.notifiche) { await salvaPref(false); aggNotifiche(); sincLocali(); toast('Notifiche disattivate'); return; }
+  const r = await permessoLocali(true);
+  if (r === 'si') { await salvaPref(true); aggNotifiche(); sincLocali(); toast('Notifiche attive'); }
+  else if (r === 'negato') avvisa('Le notifiche sono bloccate nelle impostazioni del telefono. Per attivarle: ' + (PIATTAFORMA === 'ios' ? 'Impostazioni → Notifiche → ' + C.nome : 'Impostazioni → App → ' + C.nome + ' → Notifiche') + '.');
+  else if (r === 'errore') avvisa('Non è stato possibile attivare le notifiche. Riprova più tardi.');
+}
+if (LOC) LOC.addListener('localNotificationActionPerformed', e => { const d = (e.notification && e.notification.extra) || {}; if (['pm', 'pa', 'pf', 'ph', 'p1', 'pi'].includes(d.pagina)) setTimeout(() => vai(d.pagina), 700); });
 
 /* ---------- AGGIUNGI AL CALENDARIO (come nella vecchia app Nails & Makeup, già collaudato) ----------
    iPhone: file .ics aperto direttamente → si apre il Calendario dell'iPhone con data e ora già inserite (basta premere Aggiungi).

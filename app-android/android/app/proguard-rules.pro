@@ -1,21 +1,43 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Regole di R8 (ottimizzazione/offuscamento) per Radici.
+# R8 rinomina e rimuove il codice che crede inutilizzato: qui si elenca cosa NON va toccato,
+# perché viene chiamato "per nome" (dal JavaScript dell'app o tramite riflessione).
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Informazioni utili per i report di errore (righe e nomi dei file nei crash)
+-keepattributes SourceFile,LineNumberTable,*Annotation*,Signature,InnerClasses,EnclosingMethod,Exceptions
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# --- Capacitor: il ponte tra JavaScript e Android trova plugin e metodi per nome ---
+-keep class com.getcapacitor.** { *; }
+-keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
+-keep @com.getcapacitor.NativePlugin class * { *; }
+-keep class * extends com.getcapacitor.Plugin { *; }
+-keepclassmembers class * {
+    @com.getcapacitor.PluginMethod public <methods>;
+    @com.getcapacitor.annotation.PermissionCallback <methods>;
+    @com.getcapacitor.annotation.ActivityCallback <methods>;
+    @android.webkit.JavascriptInterface <methods>;
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Plugin Aggiorna (solo versione GitHub): caricato con Class.forName in MainActivity
+-keep class it.radiciapp.prenota.AggiornaPlugin { *; }
+-dontwarn it.radiciapp.prenota.AggiornaPlugin
+
+# --- Cordova (usato internamente da Capacitor per i plugin compatibili) ---
+-keep class org.apache.cordova.** { *; }
+-dontwarn org.apache.cordova.**
+
+# --- Plugin Capacitor usati dall'app (Firebase Authentication/Messaging, App) ---
+-keep class io.capawesome.capacitorjs.plugins.** { *; }
+-keep class com.capacitorjs.plugins.** { *; }
+# Il plugin di accesso supporta anche Facebook, Play Giochi ecc., che l'app non usa (librerie non incluse)
+-dontwarn com.facebook.**
+-dontwarn com.google.android.gms.games.**
+
+# --- Accesso con Google (Credential Manager): il provider di Play Services è caricato per riflessione ---
+-if class androidx.credentials.CredentialManager
+-keep class androidx.credentials.playservices.** { *; }
+-dontwarn androidx.credentials.**
+
+# Firebase e Google Play Services includono già le proprie regole; si silenziano solo gli avvisi
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**

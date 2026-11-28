@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -24,25 +25,22 @@
 
         </activity>
 
+        <!-- Promemoria locali: tolto il componente per gli allegati delle notifiche (non li usiamo).
+             Nei commenti di questo file non scrivere il nome di quel componente: il controllo della versione Google Play lo cerca anche qui. -->
+        <provider android:name="com.capacitorjs.plugins.localnotifications.LocalNotificationsAssetProvider" tools:node="remove" />
+
         <!-- Notifiche push: icona, colore e canale predefinito -->
         <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_notifica" />
         <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/notifica" />
         <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="promemoria" />
 
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"></meta-data>
-        </provider>
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Per installare gli aggiornamenti scaricati dall'app -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Promemoria locali: niente "allarmi esatti" (Google Play li vuole dichiarati); i promemoria arrivano con qualche minuto di tolleranza -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" tools:node="remove" />
+    <!-- Le parti dell'aggiornamento automatico stanno solo nella versione "github" (src/github/AndroidManifest.xml) -->
 </manifest>
